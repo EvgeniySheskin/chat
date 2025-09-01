@@ -123,12 +123,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="chat.cpp" />
+    <ClCompile Include="chat_app.cpp" />
+    <ClCompile Include="NewUserException.cpp" />
+    <ClCompile Include="NoSuchUserException.cpp" />
+    <ClCompile Include="User.cpp" />
+    <ClCompile Include="UserException.cpp" />
+    <ClCompile Include="UserManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Chat.h" />
     <ClInclude Include="IMessage.h" />
+    <ClInclude Include="NewUserException.h" />
+    <ClInclude Include="NoSuchUserException.h" />
     <ClInclude Include="User.h" />
+    <ClInclude Include="UserException.h" />
+    <ClInclude Include="UserManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

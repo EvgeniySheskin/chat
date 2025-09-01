@@ -6,10 +6,18 @@ class User
 public:
 	User() = default;
 	User(string login, string password, string nickname);
-	bool Authorize(string pass);
+	User (User&& other) noexcept;
+	User& operator=(User&& other) noexcept;
+
+	string GetNickname();
+	void CheckUser(string login);
+	bool CompareLogin(string login);
 	~User() = default;
+	bool operator==(User& other);
+	string GetLogin();
+	friend ostream& operator<<(const ostream& os, User& user);
+
 private:
-	bool _ComparePassword(string pass);
 	string m_login;
 	string m_password;
 	string m_nickname;
