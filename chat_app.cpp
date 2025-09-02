@@ -2,23 +2,31 @@
 #include "UserManager.h"
 #include "NoSuchUserException.h"
 #include "NewUserException.h"
+#include "Menu.h"
+
+void func(string a, string ...)
+{
+
+}
 
 
 int main()
 {
     bool success = true;
     cout << "Welcome to the ChatApp!\n\n";
-    cout << "1. Register new user (sign up)\n";
-    cout << "2. Enter with existing account (sign in)\n";
-    cout << "0. Exit app\n\n";
+
+    auto welcomeMenu = new Menu<int>();
+    welcomeMenu->AddItem(new MenuItem<int>("Register new user (sign up)", 1, func), 0)->
+        AddItem(new MenuItem<int>("Enter with existing account (sign in)", 2, func), 1)->
+        AddItem(new MenuItem<int>("Exit", 0, func), 2);
+    cout << *welcomeMenu;
     cout << "Please, choose one of the following options:\n";
+    
 
-
-
-    do 
+/*    do
     {
         cout << "Hello World!\n";
 
-    } while (success);
+    } while (success);*/
     
 }

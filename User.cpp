@@ -10,9 +10,9 @@ User::User(User&& other) noexcept
 	m_login = other.m_login;
 	m_password = other.m_password;
 	m_nickname = other.m_nickname;
-	other.m_login = nullptr;
-	other.m_nickname = nullptr;
-	other.m_password = nullptr;
+	//other.m_login = nullptr;
+	//other.m_nickname = nullptr;
+	//other.m_password = nullptr;
 }
 
 User& User::operator=(User&& other) noexcept
@@ -20,9 +20,9 @@ User& User::operator=(User&& other) noexcept
 	m_login = other.m_login;
 	m_password = other.m_password;
 	m_nickname = other.m_nickname;
-	other.m_login = nullptr;
-	other.m_nickname = nullptr;
-	other.m_password = nullptr;
+	//other.m_login = nullptr;
+	//other.m_nickname = nullptr;
+	//other.m_password = nullptr;
 	return *this;
 }
 
@@ -42,11 +42,6 @@ void User::CheckUser(string login) throw(NewUserException)
 bool User::CompareLogin(string login)
 {
 	return !((bool)login.compare(m_login));
-}
-
-bool User::operator==(User& other)
-{
-	return other.CompareLogin(m_login);
 }
 
 string User::GetLogin()

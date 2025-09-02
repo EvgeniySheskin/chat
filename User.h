@@ -13,9 +13,8 @@ public:
 	void CheckUser(string login);
 	bool CompareLogin(string login);
 	~User() = default;
-	bool operator==(User& other);
 	string GetLogin();
-	friend ostream& operator<<(const ostream& os, User& user);
+	friend ostream& operator<<(ostream& os, User& user);
 
 private:
 	string m_login;

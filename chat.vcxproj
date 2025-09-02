@@ -133,6 +133,8 @@
   <ItemGroup>
     <ClInclude Include="Chat.h" />
     <ClInclude Include="IMessage.h" />
+    <ClInclude Include="Menu.h" />
+    <ClInclude Include="MenuItem.h" />
     <ClInclude Include="NewUserException.h" />
     <ClInclude Include="NoSuchUserException.h" />
     <ClInclude Include="User.h" />

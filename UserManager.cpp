@@ -4,6 +4,7 @@
 #include "NoSuchUserException.h"
 #include <regex>
 
+
 bool UserManager::CheckPassword(string pass) throw()
 {
 	if (pass.empty())
@@ -23,23 +24,27 @@ bool UserManager::CheckPassword(string pass) throw()
 
 bool UserManager::CheckLogin(string login)
 {
-	for (int i = 0; i < m_registeredUsers.size(); i++)
+	for (int i = 0; i < m_registeredUsers.size(); ++i)
 		m_registeredUsers[i].CheckUser(login);
 	return true;
 }
 
-
 bool UserManager::AddNewUser(string login, string password, string nickname) throw()
 {
-	User* newUser = new User(login, password, nickname);
-	m_registeredUsers.push_back(*newUser);
-	m_activeUser = move(newUser);
-	cout << "Welcome to chat, " << newUser->GetNickname() << "!\n\n";
+	//auto newUser = new User(login, password, nickname);
+	m_registeredUsers.push_back(User(login, password, nickname));
+	cout << "Welcome to chat, " << m_registeredUsers.end()->GetNickname() << "!\n\n";
+	return true;
 }
 
-void UserManager::DeleteUser(User* user)
+void UserManager::DeleteUser(string login)
 {
-	m_registeredUsers.erase(find(m_registeredUsers.begin(), m_registeredUsers.end(), *user));
+	for (int i = 0; i < m_registeredUsers.size(); ++i)
+	{
+		if (m_registeredUsers[i].GetLogin() == login)
+			m_registeredUsers.erase(m_registeredUsers.begin() + i);
+	}
+	
 }
 
 User* UserManager::FindUserByLogin(string login) throw(NoSuchUserException)

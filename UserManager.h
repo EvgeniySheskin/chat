@@ -7,18 +7,19 @@ using namespace std;
 // 2. создает новых
 // 3. проверяет данные на корректность
 
-static class UserManager
+class UserManager
 {
 private:
-	static vector<User> m_registeredUsers;
+	vector<User> m_registeredUsers;
 public:
-	static bool CheckPassword(string pass);
-	static bool CheckLogin(string login);
-	static User* m_activeUser;
-	static bool AddNewUser(string login, string password, string nickname);
-	static void DeleteUser(User* user);
-	static User* FindUserByLogin(string login);
+	User* m_activeUser;
 
-	static void Initialize();
+	bool CheckPassword(string pass);
+	bool CheckLogin(string login);
+	bool AddNewUser(string login, string password, string nickname);
+	void DeleteUser(string login);
+	User* FindUserByLogin(string login);
+	void Initialize();
 	User* operator[](const int index);
 };
+
