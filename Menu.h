@@ -23,7 +23,22 @@ public:
 	{
 		return m_Items;
 	}
-
+	void Execute(T code)
+	{
+		for (int i = 0, j = m_Items.size() - 1; i < j; ++i, --j)
+		{
+			if (m_Items[i].GetCode() == code)
+			{
+				m_Items[i].Execute();
+				return;
+			}
+			if (m_Items[j].GetCode() == code)
+			{
+				m_Items[j].Execute();
+				return;
+			}
+		}
+	}
 	friend ostream& operator<<(ostream& os, Menu<int>& menu)
 	{
 		auto items = menu.GetItems();
