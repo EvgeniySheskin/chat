@@ -24,17 +24,25 @@ bool UserManager::CheckPassword(string pass) throw()
 
 bool UserManager::CheckLogin(string login)
 {
-	for (int i = 0; i < m_registeredUsers.size(); ++i)
-		m_registeredUsers[i].CheckUser(login);
+	try
+	{
+		for (int i = 0; i < m_registeredUsers.size(); ++i)
+			m_registeredUsers[i].CheckUser(login);
+	}
+	catch (NewUserException e)
+	{
+		cout << e.what() << endl << endl;
+		return false;
+	}
 	return true;
 }
 
-bool UserManager::AddNewUser(string login, string password, string nickname) throw()
+void UserManager::AddNewUser(string login, string password, string nickname)
 {
+	
 	//auto newUser = new User(login, password, nickname);
 	m_registeredUsers.push_back(User(login, password, nickname));
 	cout << "Welcome to chat, " << m_registeredUsers.end()->GetNickname() << "!\n\n";
-	return true;
 }
 
 void UserManager::DeleteUser(string login)

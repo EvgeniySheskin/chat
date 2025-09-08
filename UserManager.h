@@ -16,7 +16,7 @@ public:
 
 	bool CheckPassword(string pass);
 	bool CheckLogin(string login);
-	bool AddNewUser(string login, string password, string nickname);
+	void AddNewUser(string login, string password, string nickname);
 	void DeleteUser(string login);
 	User* FindUserByLogin(string login);
 	void Initialize();
