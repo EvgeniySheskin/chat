@@ -80,7 +80,7 @@ int main()
     {
         bool success = true;
         int code = -1;
-        system("cls");
+        if(success) system("cls");
         cout << *welcomeMenu;
         cout << "Please, choose one of the following options:\n";
         cin >> code;
@@ -94,7 +94,4 @@ int main()
             cout << "There's no such option! Please, try again.\n";
         }
     }
-
-
-    
 }
