@@ -4,24 +4,51 @@
 #include "NewUserException.h"
 #include "Menu.h"
 
+using namespace chat;
+
+void ShowMenu(Menu<>* menu)
+{
+    while (true)
+    {
+        bool success = true;
+        int code = -1;
+        if (success) system("cls");
+        std::cout << *menu;
+        std::cout << "Please, choose one of the following options:\n";
+        std::cin >> code;
+        success = menu->Execute(code);
+        if (success)
+        {
+            break;
+        }
+        else
+        {
+            std::cout << "There's no such option! Please, try again.\n";
+        }
+    }
+}
+
+
+
 int main()
 {
+    Menu<>* activeMenu;
     bool success = true;
-    cout << "Welcome to the ChatApp!\n\n";
+    std::cout << "Welcome to the ChatApp!\n\n";
 
     auto userManager = new UserManager();
-    auto welcomeMenu = new Menu<int, UserManager>();
+    auto welcomeMenu = new Menu<int>();
     // формируем начальное меню
     welcomeMenu->
-    AddItem(new MenuItem<int, UserManager>("Register new user (sign up)", 1,
+    AddItem(new MenuItem<int>("Register new user (sign up)", 1,
     [manager = userManager]()
     {
         string login, password, nickname;
         bool condition = true;
         do
         {
-            cout << "Enter user login: " << endl;
-            cin >> login;
+            std::cout << "Enter user login: " << endl;
+            std::cin >> login;
             if (manager->CheckLogin(login))
             {
                 condition = false;
@@ -30,26 +57,26 @@ int main()
         condition = true;
         do
         {
-            cout << "Enter user password: " << endl;
-            cin >> password;
+            std::cout << "Enter user password: " << endl;
+            std::cin >> password;
             if (manager->CheckPassword(password))
             {
                 condition = false;
             }
         } while (condition);
-        cout << "Enter user name (available to others): " << endl;
-        cin >> nickname;
+        std::cout << "Enter user name (available to others): " << endl;
+        std::cin >> nickname;
         manager->AddNewUser(login, password, nickname);
-    }), 0)->
-    AddItem(new MenuItem<int, UserManager>("Enter with existing account (sign in)", 2,
+    }, welcomeMenu), 0)->
+    AddItem(new MenuItem<int>("Enter with existing account (sign in)", 2,
     [userManager]()
     {
         string login, password, nickname;
         bool condition = true;
         do
         {
-            cout << "Enter user login: " << endl;
-            cin >> login;
+            std::cout << "Enter user login: " << endl;
+            std::cin >> login;
             if (userManager->CheckLogin(login))
             {
                 condition = false;
@@ -58,40 +85,25 @@ int main()
         condition = true;
         do
         {
-            cout << "Enter user password: " << endl;
-            cin >> password;
+            std::cout << "Enter user password: " << endl;
+            std::cin >> password;
             if (userManager->CheckPassword(password))
             {
                 condition = false;
             }
         } while (condition);
-        cout << "Enter user name (available to others): " << endl;
-        cin >> nickname;
+        std::cout << "Enter user name (available to others): " << endl;
+        std::cin >> nickname;
         userManager->AddNewUser(login, password, nickname);
-    }), 1)->
-    AddItem(new MenuItem<int, UserManager>("Exit", 0,
+    }, welcomeMenu), 1)->
+    AddItem(new MenuItem<int>("Exit", 0,
     [userManager]()
     {
-        cout << "Have a nice day!\n\n";
+        std::cout << "Have a nice day!\n\n";
         exit(0);
-    }), 2);
+    }, welcomeMenu), 2);
         
-    while (true)
-    {
-        bool success = true;
-        int code = -1;
-        if(success) system("cls");
-        cout << *welcomeMenu;
-        cout << "Please, choose one of the following options:\n";
-        cin >> code;
-        success = welcomeMenu->Execute(code);
-        if (success)
-        {
-            break;
-        }
-        else
-        {
-            cout << "There's no such option! Please, try again.\n";
-        }
-    }
+    
+    ShowMenu(welcomeMenu);
+
 }
