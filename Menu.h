@@ -9,8 +9,10 @@ namespace chat
 	{
 	private:
 		vector<MenuItem<T>> m_Items;
+		Menu<T> m_MenuHandler;
 	public:
 		Menu() = default;
+		~Menu() = default;
 		Menu* AddItem(MenuItem<T>* newItem, int pos)
 		{
 			m_Items.insert(m_Items.begin() + pos, *newItem);
@@ -25,18 +27,25 @@ namespace chat
 		{
 			return m_Items;
 		}
+		void SetMenuHandler(Menu<T>* handler) { m_MenuHandler = handler; }
 		bool Execute(T code)
 		{
 			for (int i = 0, j = m_Items.size() - 1; i < j; ++i, --j)
 			{
 				if (m_Items[i].GetCode() == code)
 				{
-					m_Items[i].Execute();
+					if (m_MenuHandler)
+						m_Items[i].ExecuteAndPassControlTo(m_MenuHandler);
+					else
+						m_Items[i].Execute();
 					return true;
 				}
 				if (m_Items[j].GetCode() == code)
 				{
-					m_Items[j].Execute();
+					if (m_MenuHandler)
+						m_Items[j].ExecuteAndPassControlTo(m_MenuHandler);
+					else
+						m_Items[i].Execute();
 					return true;
 				}
 			}

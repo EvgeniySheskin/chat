@@ -25,11 +25,16 @@ namespace chat
 		{
 			return m_ItemText;
 		}
+		void Execute()
+		{
+			m_Exec();
+		}
 		void ExecuteAndPassControlTo(Menu<T>* destMenu)
 		{
 			m_Exec();
 			destMenu = m_NextStepMenu;
 		}
+		~MenuItem() = default;
 		friend ostream& operator<<(ostream& os, MenuItem<T>& item)
 		{
 			string out = to_string(item.GetCode()) + ". " + item.GetText() + "\n";
