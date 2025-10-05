@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 #include <iostream>
 #include <vector>
 #include <memory>
@@ -16,11 +16,11 @@ namespace chat
 		ConsoleMenu();
 		~ConsoleMenu();
 		ConsoleMenu* addItem(const std::string& text, std::function<void()> action);
-		// Запрет копирования
+		// Р—Р°РїСЂРµС‚ РєРѕРїРёСЂРѕРІР°РЅРёСЏ
 		ConsoleMenu(const ConsoleMenu&) = delete;
 		ConsoleMenu& operator=(const ConsoleMenu&) = delete;
 
-		// Разрешить перемещение (опционально)
+		// Р Р°Р·СЂРµС€РёС‚СЊ РїРµСЂРµРјРµС‰РµРЅРёРµ (РѕРїС†РёРѕРЅР°Р»СЊРЅРѕ)
 		ConsoleMenu(ConsoleMenu&&) = default;
 		ConsoleMenu& operator=(ConsoleMenu&&) = default;
 

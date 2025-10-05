@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 #include "UserManager.h"
 #include "Message.h"
 #include "ConsoleMenu.h"
@@ -15,12 +15,12 @@ namespace chat
         UserManager m_UserManager;
         std::vector<Message> m_Messages;
 
-        // Меню
+        // РњРµРЅСЋ
         void ShowMainMenu();
         void ShowChatMenu();
         //void ShowAuthMenu();
 
-        // Действия
+        // Р”РµР№СЃС‚РІРёСЏ
         void HandleRegister();
         void HandleLogin();
         void HandleLogout();
@@ -30,5 +30,7 @@ namespace chat
 
         bool IsUserLoggedIn() const;
         std::string GetActiveLogin() const;
+        std::string GetActiveNickname() const;
+
     };
 }

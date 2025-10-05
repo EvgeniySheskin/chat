@@ -1,4 +1,4 @@
-#include "ChatApp.h"
+п»ї#include "ChatApp.h"
 #include <iostream>
 #include <sstream>
 #include <iomanip>
@@ -18,18 +18,18 @@ namespace chat
     void ChatApp::ShowMainMenu() 
     {
         ConsoleMenu menu;
-        menu.addItem("Войти", [this]() { HandleLogin(); });
-        menu.addItem("Зарегистрироваться", [this]() { HandleRegister(); });
-        menu.addItem("Выход", [this]() { HandleExit(); });
+        menu.addItem("Р’РѕР№С‚Рё", [this]() { HandleLogin(); });
+        menu.addItem("Р—Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°С‚СЊСЃСЏ", [this]() { HandleRegister(); });
+        menu.addItem("Р’С‹С…РѕРґ", [this]() { HandleExit(); });
         menu.run();
     }
 
     void ChatApp::ShowChatMenu() 
     {
         ConsoleMenu menu;
-        menu.addItem("Отправить сообщение", [this]() { HandleSendMessage(); });
-        menu.addItem("Просмотреть сообщения", [this]() { HandleViewMessages(); });
-        menu.addItem("Выйти из аккаунта", [this]() { HandleLogout(); });
+        menu.addItem("РћС‚РїСЂР°РІРёС‚СЊ СЃРѕРѕР±С‰РµРЅРёРµ", [this]() { HandleSendMessage(); });
+        menu.addItem("РџСЂРѕСЃРјРѕС‚СЂРµС‚СЊ СЃРѕРѕР±С‰РµРЅРёСЏ", [this]() { HandleViewMessages(); });
+        menu.addItem("Р’С‹Р№С‚Рё РёР· Р°РєРєР°СѓРЅС‚Р°", [this]() { HandleLogout(); });
         menu.run();
     }
 
@@ -38,49 +38,58 @@ namespace chat
         try 
         {
             std::string login, password, nickname;
-            std::cout << "Логин: ";
+            std::cout << "Р›РѕРіРёРЅ: ";
             std::cin >> login;
-            std::cout << "Пароль (минимум 6 символов, цифра и спецсимвол $&*!): ";
+            if (!m_UserManager.IsLoginAvailable(login))
+                throw NewUserException("Р®Р·РµСЂ СЃ С‚Р°РєРёРј Р»РѕРіРёРЅРѕРј СѓР¶Рµ РµСЃС‚СЊ");
+            std::cout << "РџР°СЂРѕР»СЊ (РјРёРЅРёРјСѓРј 6 СЃРёРјРІРѕР»РѕРІ, С†РёС„СЂР° Рё СЃРїРµС†СЃРёРјРІРѕР» $&*!): ";
             std::cin >> password;
-            std::cout << "Никнейм: ";
+            m_UserManager.ValidatePassword(password);
+            std::cout << "РќРёРєРЅРµР№Рј: ";
             std::cin >> nickname;
-
+            if (!m_UserManager.IsNicknameAvailable(login))
+                throw NewUserException("Р®Р·РµСЂ СЃ С‚Р°РєРёРј РЅРёРєРѕРј СѓР¶Рµ РµСЃС‚СЊ РІ С‡Р°С‚Рµ");
             m_UserManager.AddNewUser(login, password, nickname);
-            std::cout << "Регистрация успешна!\n\n";
+            std::cout << "Р РµРіРёСЃС‚СЂР°С†РёСЏ СѓСЃРїРµС€РЅР°!\n\n";
         }
-        catch (const NewUserException& e) {
-            std::cout << "Ошибка: " << e.what() << "\n\n";
+        catch (const NewUserException& e) 
+        {
+            std::cout << "РћС€РёР±РєР°: " << e.what() << "\n\n";
+        }
+        catch (const std::invalid_argument& e)
+        {
+            std::cout << "РћС€РёР±РєР°: " << e.what() << "\n\n";
         }
     }
 
     void ChatApp::HandleLogin() {
         try {
             std::string login, password;
-            std::cout << "Логин: ";
+            std::cout << "Р›РѕРіРёРЅ: ";
             std::cin >> login;
-            std::cout << "Пароль: ";
+            std::cout << "РџР°СЂРѕР»СЊ: ";
             std::cin >> password;
 
-            // Простая аутентификация: ищем пользователя и сравниваем пароль
+            // РџСЂРѕСЃС‚Р°СЏ Р°СѓС‚РµРЅС‚РёС„РёРєР°С†РёСЏ: РёС‰РµРј РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ Рё СЃСЂР°РІРЅРёРІР°РµРј РїР°СЂРѕР»СЊ
             User* user = m_UserManager.FindUserByLogin(login);
             if (!user || user->GetPassword() != password) {
-                std::cout << "Неверный логин или пароль.\n\n";
+                std::cout << "РќРµРІРµСЂРЅС‹Р№ Р»РѕРіРёРЅ РёР»Рё РїР°СЂРѕР»СЊ.\n\n";
                 return;
             }
 
             m_UserManager.SetActiveUser(login);
-            std::cout << "Добро пожаловать, " << user->GetNickname() << "!\n\n";
+            std::cout << "Р”РѕР±СЂРѕ РїРѕР¶Р°Р»РѕРІР°С‚СЊ, " << user->GetNickname() << "!\n\n";
             ShowChatMenu();
         }
         catch (const NoSuchUserException& e) {
-            std::cout << "Ошибка: " << e.what() << "\n\n";
+            std::cout << "РћС€РёР±РєР°: " << e.what() << "\n\n";
         }
     }
 
     void ChatApp::HandleLogout() 
     {
-        m_UserManager.SetActiveUser(""); // сброс 
-        std::cout << "Вы вышли из аккаунта.\n\n";
+        m_UserManager.SetActiveUser(""); // СЃР±СЂРѕСЃ 
+        std::cout << "Р’С‹ РІС‹С€Р»Рё РёР· Р°РєРєР°СѓРЅС‚Р°.\n\n";
         return; 
     }
 
@@ -89,39 +98,63 @@ namespace chat
         if (!IsUserLoggedIn()) return;
 
         std::string choice;
-        std::cout << "Отправить (1) личное сообщение или (2) в общий чат? ";
+        std::cout << "РћС‚РїСЂР°РІРёС‚СЊ (1) Р»РёС‡РЅРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ РёР»Рё (2) РІ РѕР±С‰РёР№ С‡Р°С‚? ";
         std::cin >> choice;
 
         std::string recipient, text;
         if (choice == "1") 
         {
-            std::cout << "Кому (логин): ";
-            std::cin >> recipient;
+            std::string activeLogin = GetActiveLogin();
+            const auto& users = m_UserManager.GetRegisteredUsers();
 
-            // Проверим, существует ли получатель
-            if (!m_UserManager.FindUserByLogin(recipient)) 
-            {
-                std::cout << "Пользователь не найден.\n\n";
+            // Р¤РёР»СЊС‚СЂСѓРµРј: РІСЃРµ РїРѕР»СЊР·РѕРІР°С‚РµР»Рё, РєСЂРѕРјРµ С‚РµРєСѓС‰РµРіРѕ
+            std::vector<std::string> availableRecipients;
+            std::cout << "\n=== Р’С‹Р±РµСЂРёС‚Рµ РїРѕР»СѓС‡Р°С‚РµР»СЏ ===\n";
+            int index = 1;
+            for (const auto& user : users) {
+                if (user.GetLogin() != activeLogin) {
+                    std::cout << index << ". " << user.GetNickname() << "\n";
+                    availableRecipients.push_back(user.GetNickname());
+                    ++index;
+                }
+            }
+
+            if (availableRecipients.empty()) {
+                std::cout << "РќРµС‚ РґСЂСѓРіРёС… РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ РґР»СЏ РѕС‚РїСЂР°РІРєРё СЃРѕРѕР±С‰РµРЅРёСЏ.\n\n";
                 return;
             }
+
+            std::cout << "\nР’РІРµРґРёС‚Рµ РЅРѕРјРµСЂ РїРѕР»СѓС‡Р°С‚РµР»СЏ: ";
+            int recipientIndex;
+            if (!(std::cin >> recipientIndex) 
+                             || recipientIndex < 1 
+                                 || recipientIndex > static_cast<int>(availableRecipients.size())) 
+            {
+                std::cout << "РќРµРІРµСЂРЅС‹Р№ РЅРѕРјРµСЂ.\n\n";
+                std::cin.clear();
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                return;
+            }
+            std::string recipientNickname = availableRecipients[recipientIndex - 1];
             std::cin.ignore();
-            std::cout << "Сообщение: ";
+            std::cout << "РЎРѕРѕР±С‰РµРЅРёРµ РїРѕР»СЊР·РѕРІР°С‚РµР»СЋ " << recipientNickname << ": ";
             std::getline(std::cin, text);
-            m_Messages.emplace_back(GetActiveLogin(), recipient, text);
+            m_Messages.emplace_back(m_UserManager.GetActiveUser()->GetNickname(), recipientNickname, text);
+            std::cout << "Р›РёС‡РЅРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ РѕС‚РїСЂР°РІР»РµРЅРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЋ " << recipientNickname << "!\n\n";
         }
         else if (choice == "2") 
         {
             std::cin.ignore();
-            std::cout << "Сообщение в общий чат: ";
+            std::cout << "РЎРѕРѕР±С‰РµРЅРёРµ РІ РѕР±С‰РёР№ С‡Р°С‚: ";
             std::getline(std::cin, text);
-            m_Messages.emplace_back(GetActiveLogin(), "", text);
+            m_Messages.emplace_back(GetActiveNickname(), "", text);
         }
         else 
         {
-            std::cout << "Неверный выбор.\n\n";
+            std::cout << "РќРµРІРµСЂРЅС‹Р№ РІС‹Р±РѕСЂ.\n\n";
             return;
         }
-        std::cout << "Сообщение отправлено!\n\n";
+        std::cout << "РЎРѕРѕР±С‰РµРЅРёРµ РѕС‚РїСЂР°РІР»РµРЅРѕ!\n\n";
     }
 
     void ChatApp::HandleViewMessages() 
@@ -131,7 +164,7 @@ namespace chat
         std::string activeLogin = GetActiveLogin();
         bool hasMessages = false;
 
-        std::cout << "\n=== Ваши сообщения ===\n";
+        std::cout << "\n=== Р’Р°С€Рё СЃРѕРѕР±С‰РµРЅРёСЏ ===\n";
         for (const auto& msg : m_Messages) 
         {
             if (msg.IsForUser(activeLogin)) 
@@ -152,11 +185,11 @@ namespace chat
                 std::cout << "[" << buffer << "] ";
                 if (msg.IsPrivate()) 
                 {
-                    std::cout << "Личное от " << msg.GetFrom() << ": ";
+                    std::cout << "Р›РёС‡РЅРѕРµ РѕС‚ " << msg.GetFrom() << ": ";
                 }
                 else 
                 {
-                    std::cout << msg.GetFrom() << " (все): ";
+                    std::cout << msg.GetFrom() << " (РІСЃРµ): ";
                 }
                 std::cout << msg.GetText() << "\n";
             }
@@ -164,14 +197,14 @@ namespace chat
 
         if (!hasMessages) 
         {
-            std::cout << "Нет сообщений.\n";
+            std::cout << "РќРµС‚ СЃРѕРѕР±С‰РµРЅРёР№.\n";
         }
         std::cout << "\n";
     }
 
     void ChatApp::HandleExit() 
     {
-        std::cout << "До свидания!\n";
+        std::cout << "Р”Рѕ СЃРІРёРґР°РЅРёСЏ!\n";
         exit(0);
     }
 
@@ -184,5 +217,10 @@ namespace chat
     {
         auto* user = m_UserManager.GetActiveUser();
         return user ? user->GetLogin() : "";
+    }
+    std::string ChatApp::GetActiveNickname() const
+    {
+        auto* user = m_UserManager.GetActiveUser();
+        return user ? user->GetNickname() : "";
     }
 }

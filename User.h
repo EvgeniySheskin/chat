@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 
 #include <string>
 #include <iosfwd>
@@ -8,26 +8,26 @@ namespace chat
     class User
     {
     public:
-        // Конструкторы
+        // РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂС‹
         User() = default;
         User(const std::string& login, const std::string& password, const std::string& nickname);
 
-        // Правило пяти 
+        // РџСЂР°РІРёР»Рѕ РїСЏС‚Рё 
         User(const User&) = default;
         User(User&&) noexcept = default;
         User& operator=(const User&) = default;
         User& operator=(User&&) noexcept = default;
         ~User() = default;
 
-        // Геттеры
+        // Р“РµС‚С‚РµСЂС‹
         const std::string& GetLogin() const noexcept { return m_Login; }
         const std::string& GetPassword() const noexcept { return m_Password; }
         const std::string& GetNickname() const noexcept { return m_Nickname; }
 
-        // Сравнение логина — эффективно и ясно
+        // РЎСЂР°РІРЅРµРЅРёРµ Р»РѕРіРёРЅР° вЂ” СЌС„С„РµРєС‚РёРІРЅРѕ Рё СЏСЃРЅРѕ
         bool HasLogin(const std::string& login) const noexcept { return m_Login == login; }
 
-        // Оператор вывода
+        // РћРїРµСЂР°С‚РѕСЂ РІС‹РІРѕРґР°
         friend std::ostream& operator<<(std::ostream& os, const User& user);
 
     private:

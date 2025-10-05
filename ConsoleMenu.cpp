@@ -1,4 +1,4 @@
-#include "ConsoleMenu.h"
+ï»¿#include "ConsoleMenu.h"
 
 namespace chat
 {
@@ -21,38 +21,38 @@ namespace chat
 		for (size_t i = 0; i < items.size(); ++i) {
 			std::cout << (i + 1) << ". " << items[i]->getText() << '\n';
 		}
-		if (!items.empty()) {
-			std::cout << "0. Âûõîä\n";
-		}
+		/*if (!items.empty()) {
+			std::cout << "0. Ð’Ñ‹Ñ…Ð¾Ð´\n";
+		}*/
 		return os;
 	}
 	void ConsoleMenu::run() {
 		if (m_Items.empty()) {
-			std::cout << "Ìåíþ ïóñòî.\n";
+			std::cout << "ÐœÐµÐ½ÑŽ Ð¿ÑƒÑÑ‚Ð¾.\n";
 			return;
 		}
 		int choice;
 		do {
-			std::cout << this;
-			std::cout << "Âûáåðèòå ïóíêò: ";
+			std::cout << *this;
+			std::cout << "Ð’Ñ‹Ð±ÐµÑ€Ð¸Ñ‚Ðµ Ð¿ÑƒÐ½ÐºÑ‚: ";
 
-			// Ïðîâåðêà êîððåêòíîñòè ââîäà
+			// ÐŸÑ€Ð¾Ð²ÐµÑ€ÐºÐ° ÐºÐ¾Ñ€Ñ€ÐµÐºÑ‚Ð½Ð¾ÑÑ‚Ð¸ Ð²Ð²Ð¾Ð´Ð°
 			if (!(std::cin >> choice)) {
 				std::cin.clear();
 				std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-				std::cout << "Îøèáêà: ââåäèòå öåëîå ÷èñëî.\n\n";
+				std::cout << "ÐžÑˆÐ¸Ð±ÐºÐ°: Ð²Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ñ†ÐµÐ»Ð¾Ðµ Ñ‡Ð¸ÑÐ»Ð¾.\n\n";
 				continue;
 			}
 
-			if (choice == 0) {
-				break; // Âûõîä
-			}
+			/*if (choice == 0) {
+				break; // Ð’Ñ‹Ñ…Ð¾Ð´
+			}*/
 			else if (choice >= 1 && choice <= static_cast<int>(m_Items.size())) {
 				m_Items[choice - 1]->execute();
 				std::cout << '\n';
 			}
 			else {
-				std::cout << "Íåâåðíûé âûáîð. Ïîïðîáóéòå ñíîâà.\n\n";
+				std::cout << "ÐÐµÐ²ÐµÑ€Ð½Ñ‹Ð¹ Ð²Ñ‹Ð±Ð¾Ñ€. ÐŸÐ¾Ð¿Ñ€Ð¾Ð±ÑƒÐ¹Ñ‚Ðµ ÑÐ½Ð¾Ð²Ð°.\n\n";
 			}
 		} while (true);
 	}

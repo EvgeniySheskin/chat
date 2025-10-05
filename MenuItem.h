@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 #include <iostream>
 #include <string>
 #include <functional>
@@ -14,11 +14,11 @@ namespace chat
     public:
         MenuItem(const std::string& text, std::function<void()> action);
         
-        // Запрет копирования
+        // Р—Р°РїСЂРµС‚ РєРѕРїРёСЂРѕРІР°РЅРёСЏ
         MenuItem(const MenuItem&) = delete;
         MenuItem& operator=(const MenuItem&) = delete;
 
-        // Разрешение перемещения
+        // Р Р°Р·СЂРµС€РµРЅРёРµ РїРµСЂРµРјРµС‰РµРЅРёСЏ
         MenuItem(MenuItem&&) noexcept = default;
         MenuItem& operator=(MenuItem&&) noexcept = default;
 

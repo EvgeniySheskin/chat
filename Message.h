@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 #include <string>
 #include <ctime>
 
@@ -19,7 +19,7 @@ namespace chat
 
     private:
         std::string m_from;
-        std::string m_to;       // пусто = общее сообщение
+        std::string m_to;       // РїСѓСЃС‚Рѕ = РѕР±С‰РµРµ СЃРѕРѕР±С‰РµРЅРёРµ
         std::string m_text;
         std::time_t m_timestamp;
     };

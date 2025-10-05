@@ -1,8 +1,8 @@
-#include "NoSuchUserException.h"
+﻿#include "NoSuchUserException.h"
 
 NoSuchUserException::NoSuchUserException(string login)
 {
-	m_msg = "There is no such registered user: " + login + "\n\n";
+	m_msg = "Пользователя с таким логином не существует: " + login + "\n\n";
 }
 
 

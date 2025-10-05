@@ -1,4 +1,4 @@
-#include "UserManager.h"
+ï»¿#include "UserManager.h"
 #include <iostream>
 #include <regex>
 
@@ -6,28 +6,40 @@ namespace chat
 {
     UserManager::UserManager() 
     {
-        m_activeUser = nullptr;
+        m_ActiveUser = nullptr;
     }
 
     void UserManager::ValidatePassword(const std::string& password) const 
     {
         if (password.size() < 6) 
         {
-            throw std::invalid_argument("Ïàðîëü äîëæåí ñîäåðæàòü êàê ìèíèìóì 6 ñèìâîëîâ.\n");
+            throw std::invalid_argument("ÐŸÐ°Ñ€Ð¾Ð»ÑŒ Ð´Ð¾Ð»Ð¶ÐµÐ½ ÑÐ¾Ð´ÐµÑ€Ð¶Ð°Ñ‚ÑŒ ÐºÐ°Ðº Ð¼Ð¸Ð½Ð¸Ð¼ÑƒÐ¼ 6 ÑÐ¸Ð¼Ð²Ð¾Ð»Ð¾Ð².\n");
         }
-        // Òðåáóåò õîòÿ áû îäíó öèôðó è õîòÿ áû îäèí ñïåöñèìâîë
+        // Ð¢Ñ€ÐµÐ±ÑƒÐµÑ‚ Ñ…Ð¾Ñ‚Ñ Ð±Ñ‹ Ð¾Ð´Ð½Ñƒ Ñ†Ð¸Ñ„Ñ€Ñƒ Ð¸ Ñ…Ð¾Ñ‚Ñ Ð±Ñ‹ Ð¾Ð´Ð¸Ð½ ÑÐ¿ÐµÑ†ÑÐ¸Ð¼Ð²Ð¾Ð»
         bool hasDigit = std::regex_search(password, std::regex(R"(\d)"));
         bool hasSpecial = std::regex_search(password, std::regex(R"([\$&*!])"));
 
         if (!hasDigit || !hasSpecial) 
         {
-            throw std::invalid_argument("Ïàðîëü äîëæåí ñîäåðæàòü êàê ìèíèìóì îäíó öèôðó è îäèí ñïåöñèìâîë: $, &, *, !");
+            throw std::invalid_argument("ÐŸÐ°Ñ€Ð¾Ð»ÑŒ Ð´Ð¾Ð»Ð¶ÐµÐ½ ÑÐ¾Ð´ÐµÑ€Ð¶Ð°Ñ‚ÑŒ ÐºÐ°Ðº Ð¼Ð¸Ð½Ð¸Ð¼ÑƒÐ¼ Ð¾Ð´Ð½Ñƒ Ñ†Ð¸Ñ„Ñ€Ñƒ Ð¸ Ð¾Ð´Ð¸Ð½ ÑÐ¿ÐµÑ†ÑÐ¸Ð¼Ð²Ð¾Ð»: $, &, *, !");
         }
+    }
+
+    bool UserManager::IsNicknameAvailable(const std::string& nick) const
+    {
+        for (const auto& user : m_RegisteredUsers)
+        {
+            if (user.GetNickname() == nick)
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     bool UserManager::IsLoginAvailable(const std::string& login) const 
     {
-        for (const auto& user : m_registeredUsers) 
+        for (const auto& user : m_RegisteredUsers) 
         {
             if (user.GetLogin() == login) 
             {
@@ -39,29 +51,29 @@ namespace chat
 
     void UserManager::AddNewUser(const std::string& login, const std::string& password, const std::string& nickname) 
     {
-        if (!IsLoginAvailable(login)) 
+        /*if (!IsLoginAvailable(login))
         {
-            throw NewUserException("Login already exists.");
+            throw NewUserException("Ð®Ð·ÐµÑ€ Ñ Ñ‚Ð°ÐºÐ¸Ð¼ Ð»Ð¾Ð³Ð¸Ð½Ð¾Ð¼ ÑƒÐ¶Ðµ ÐµÑÑ‚ÑŒ");
         }
 
-        ValidatePassword(password);
+        ValidatePassword(password);*/
 
-        // Ñîçäà¸ì è äîáàâëÿåì ïîëüçîâàòåëÿ
-        m_registeredUsers.emplace_back(login, password, nickname);
-        std::cout << "Äîáðî ïîæàëîâàòü â ÷àò, " << m_registeredUsers.back().GetNickname() << "!\n\n";
+        // Ð¡Ð¾Ð·Ð´Ð°Ñ‘Ð¼ Ð¸ Ð´Ð¾Ð±Ð°Ð²Ð»ÑÐµÐ¼ Ð¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ñ‚ÐµÐ»Ñ
+        m_RegisteredUsers.emplace_back(login, password, nickname);
+        std::cout << "Ð”Ð¾Ð±Ñ€Ð¾ Ð¿Ð¾Ð¶Ð°Ð»Ð¾Ð²Ð°Ñ‚ÑŒ Ð² Ñ‡Ð°Ñ‚, " << m_RegisteredUsers.back().GetNickname() << "!\n\n";
     }
 
     void UserManager::DeleteUser(const std::string& login) 
     {
-        for (auto it = m_registeredUsers.begin(); it != m_registeredUsers.end(); ++it) 
+        for (auto it = m_RegisteredUsers.begin(); it != m_RegisteredUsers.end(); ++it) 
         {
             if (it->GetLogin() == login) {
-                // Åñëè óäàëÿåì àêòèâíîãî ïîëüçîâàòåëÿ — ñáðîñèòü óêàçàòåëü
-                if (m_activeUser == &(*it)) 
+                // Ð•ÑÐ»Ð¸ ÑƒÐ´Ð°Ð»ÑÐµÐ¼ Ð°ÐºÑ‚Ð¸Ð²Ð½Ð¾Ð³Ð¾ Ð¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ñ‚ÐµÐ»Ñ â€” ÑÐ±Ñ€Ð¾ÑÐ¸Ñ‚ÑŒ ÑƒÐºÐ°Ð·Ð°Ñ‚ÐµÐ»ÑŒ
+                if (m_ActiveUser == &(*it)) 
                 {
-                    m_activeUser = nullptr;
+                    m_ActiveUser = nullptr;
                 }
-                m_registeredUsers.erase(it);
+                m_RegisteredUsers.erase(it);
                 return;
             }
         }
@@ -70,7 +82,7 @@ namespace chat
 
     User* UserManager::FindUserByLogin(const std::string& login) noexcept 
     {
-        for (auto& user : m_registeredUsers) 
+        for (auto& user : m_RegisteredUsers) 
         {
             if (user.GetLogin() == login) 
             {
@@ -80,6 +92,7 @@ namespace chat
         return nullptr;
     }
 
+
     void UserManager::SetActiveUser(const std::string& login) 
     {
         User* user = FindUserByLogin(login);
@@ -87,24 +100,24 @@ namespace chat
         {
             throw NoSuchUserException(login);
         }
-        m_activeUser = user;
+        m_ActiveUser = user;
     }
 
     User& UserManager::operator[](size_t index) 
     {
-        if (index >= m_registeredUsers.size()) 
+        if (index >= m_RegisteredUsers.size()) 
         {
             throw std::out_of_range("UserManager::operator[]: index out of range");
         }
-        return m_registeredUsers[index];
+        return m_RegisteredUsers[index];
     }
 
     const User& UserManager::operator[](size_t index) const 
     {
-        if (index >= m_registeredUsers.size()) 
+        if (index >= m_RegisteredUsers.size()) 
         {
             throw std::out_of_range("UserManager::operator[]: index out of range");
         }
-        return m_registeredUsers[index];
+        return m_RegisteredUsers[index];
     }
 }

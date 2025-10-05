@@ -1,11 +1,11 @@
-#pragma once
+п»ї#pragma once
 
 #include "User.h"
 #include "NewUserException.h"
 #include "NoSuchUserException.h"
 #include <vector>
 #include <string>
-#include <stdexcept> // для стандартных исключений
+#include <stdexcept> // РґР»СЏ СЃС‚Р°РЅРґР°СЂС‚РЅС‹С… РёСЃРєР»СЋС‡РµРЅРёР№
 
 namespace chat
 {
@@ -14,39 +14,45 @@ namespace chat
         UserManager();
         ~UserManager() = default; 
 
-        // Запреnт копирования 
+        // Р—Р°РїСЂРµnС‚ РєРѕРїРёСЂРѕРІР°РЅРёСЏ 
         UserManager(const UserManager&) = delete;
         UserManager& operator=(const UserManager&) = delete;
 
-        // Проверка корректности пароля (бросает исключение при ошибке)
+        // РџСЂРѕРІРµСЂРєР° РєРѕСЂСЂРµРєС‚РЅРѕСЃС‚Рё РїР°СЂРѕР»СЏ (Р±СЂРѕСЃР°РµС‚ РёСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕС€РёР±РєРµ)
         void ValidatePassword(const std::string& password) const;
+        
+        // РџСЂРѕРІРµСЂРєР°, СЃРІРѕР±РѕРґРµРЅ Р»Рё РЅРёРєРЅРµР№Рј
+        bool IsNicknameAvailable(const std::string& nick) const;
 
-        // Проверка, свободен ли логин
+        // РџСЂРѕРІРµСЂРєР°, СЃРІРѕР±РѕРґРµРЅ Р»Рё Р»РѕРіРёРЅ
         bool IsLoginAvailable(const std::string& login) const;
 
-        // Добавление нового пользователя
+        // Р”РѕР±Р°РІР»РµРЅРёРµ РЅРѕРІРѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
         void AddNewUser(const std::string& login, const std::string& password, const std::string& nickname);
 
-        // Удаление пользователя по логину
+        // РЈРґР°Р»РµРЅРёРµ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РїРѕ Р»РѕРіРёРЅСѓ
         void DeleteUser(const std::string& login);
 
-        // Поиск пользователя по логину (возвращает nullptr, если не найден)
+        // РџРѕРёСЃРє РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РїРѕ Р»РѕРіРёРЅСѓ (РІРѕР·РІСЂР°С‰Р°РµС‚ nullptr, РµСЃР»Рё РЅРµ РЅР°Р№РґРµРЅ)
         User* FindUserByLogin(const std::string& login) noexcept;
 
-        // Установка активного пользователя
+        // РЈСЃС‚Р°РЅРѕРІРєР° Р°РєС‚РёРІРЅРѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
         void SetActiveUser(const std::string& login);
-        User* GetActiveUser() const noexcept { return m_activeUser; }
+        User* GetActiveUser() const noexcept { return m_ActiveUser; }
 
-        // Доступ к пользователю по индексу (с проверкой границ)
+        // Р”РѕСЃС‚СѓРї Рє РїРѕР»СЊР·РѕРІР°С‚РµР»СЋ РїРѕ РёРЅРґРµРєСЃСѓ (СЃ РїСЂРѕРІРµСЂРєРѕР№ РіСЂР°РЅРёС†)
         User& operator[](size_t index);
         const User& operator[](size_t index) const;
 
-        // Получение количества зарегистрированных пользователей
-        size_t GetUserCount() const noexcept { return m_registeredUsers.size(); }
+        // РџРѕР»СѓС‡РµРЅРёРµ РєРѕР»РёС‡РµСЃС‚РІР° Р·Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°РЅРЅС‹С… РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№
+        size_t GetUserCount() const noexcept { return m_RegisteredUsers.size(); }
+
+        // РџРѕР»СѓС‡РµРЅРёРµ СЃРїРёСЃРєР° Р·Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°РЅРЅС‹С… РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№
+        const std::vector<User>& GetRegisteredUsers() const noexcept { return m_RegisteredUsers; }
 
     private:
-        std::vector<User> m_registeredUsers;
-        User* m_activeUser = nullptr; // указывает на элемент вектора
+        std::vector<User> m_RegisteredUsers;
+        User* m_ActiveUser = nullptr; // СѓРєР°Р·С‹РІР°РµС‚ РЅР° СЌР»РµРјРµРЅС‚ РІРµРєС‚РѕСЂР°
     };
 }
 

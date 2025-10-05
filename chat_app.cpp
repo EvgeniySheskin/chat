@@ -1,4 +1,5 @@
 ﻿#include <iostream>
+#include <windows.h>
 #include "ChatApp.h"
 
 using namespace chat;
@@ -6,9 +7,9 @@ using namespace chat;
 
 int main()
 {
-    std::setlocale(LC_ALL, "");
+    SetConsoleCP(1251);
+    SetConsoleOutputCP(1251);
     ChatApp app;
     app.Run();
     return 0;
-    
 }
