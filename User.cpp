@@ -1,56 +1,16 @@
 #include "User.h"
-#include "NewUserException.h"
 #include <iostream>
 
-User::User(string login, string password, string nickname)
-	: m_login(login), m_password(password), m_nickname(nickname) {}
-
-User::User(User&& other) noexcept
+namespace chat
 {
-	m_login = other.m_login;
-	m_password = other.m_password;
-	m_nickname = other.m_nickname;
-	//other.m_login = nullptr;
-	//other.m_nickname = nullptr;
-	//other.m_password = nullptr;
-}
+    User::User(const std::string& login, const std::string& password, const std::string& nickname)
+        : m_Login(login), m_Password(password), m_Nickname(nickname) {
+    }
 
-User& User::operator=(User&& other) noexcept
-{
-	m_login = other.m_login;
-	m_password = other.m_password;
-	m_nickname = other.m_nickname;
-	//other.m_login = nullptr;
-	//other.m_nickname = nullptr;
-	//other.m_password = nullptr;
-	return *this;
-}
-
-string User::GetNickname()
-{
-	return m_nickname;
-}
-
-void User::CheckUser(string login) throw(NewUserException)
-{
-	if (!CompareLogin(m_login))
-	{
-		throw NewUserException(m_login);
-	}
-}
-
-bool User::CompareLogin(string login)
-{
-	return !((bool)login.compare(m_login));
-}
-
-string User::GetLogin()
-{
-	return m_login;
-}
-
-ostream& operator<<(ostream& os, User& user)
-{
-	os << user.GetLogin() << endl << endl;
-	return os;
+    std::ostream& operator<<(std::ostream& os, const User& user)
+    {
+        os << "Login: " << user.m_Login
+            << "\nNickname: " << user.m_Nickname << std::endl;
+        return os;
+    }
 }
