@@ -6,28 +6,20 @@
 
 using namespace chat;
 
-void ShowMenu(Menu<>* menu)
+
+bool ShowMenu(Menu<>* menu)
 {
-    while (true)
-    {
-        bool success = true;
-        int code = -1;
-        if (success) system("cls");
-        std::cout << *menu;
-        std::cout << "Please, choose one of the following options:\n";
-        std::cin >> code;
-        success = menu->Execute(code);
-        if (success)
-        {
-            break;
-        }
-        else
-        {
-            std::cout << "There's no such option! Please, try again.\n";
-        }
-    }
+    int code = -1;
+    std::cout << *menu;
+    std::cout << "Please, choose one of the following options:\n";
+    std::cin >> code;
+    return menu->Execute(code);
 }
 
+Menu<>* CreateWelcomeMenu(UserManager* um)
+{
+
+}
 
 
 int main()
@@ -104,6 +96,16 @@ int main()
     }, welcomeMenu), 2);
         
     
-    ShowMenu(welcomeMenu);
-
+    while (true)
+    {
+        if (ShowMenu(activeMenu))
+        {
+            system("cls");
+        }
+        else
+        {
+            system("cls");
+            cout << "No such option, choose differently: \n";
+        }
+    }
 }
