@@ -1,4 +1,7 @@
-﻿#pragma once
+﻿/*Класс меню
+Использует Builder для конструирования
+Работает автономно*/
+#pragma once
 #include <iostream>
 #include <vector>
 #include <memory>
@@ -15,7 +18,7 @@ namespace chat
 	public:
 		ConsoleMenu();
 		~ConsoleMenu();
-		ConsoleMenu* addItem(const std::string& text, std::function<void()> action);
+		ConsoleMenu* AddItem(const std::string& text, std::function<void()> action);
 		// Запрет копирования
 		ConsoleMenu(const ConsoleMenu&) = delete;
 		ConsoleMenu& operator=(const ConsoleMenu&) = delete;
@@ -24,7 +27,7 @@ namespace chat
 		ConsoleMenu(ConsoleMenu&&) = default;
 		ConsoleMenu& operator=(ConsoleMenu&&) = default;
 
-		void run();
+		void Run();
 		friend std::ostream& operator<<(std::ostream& os, ConsoleMenu& menu);
 		const std::vector<std::unique_ptr<MenuItem>>& GetItems() const;
 	};

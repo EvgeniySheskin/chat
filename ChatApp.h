@@ -1,4 +1,6 @@
-﻿#pragma once
+﻿/*Основной класс приложения
+Организует порядок выполнения программы*/
+#pragma once
 #include "UserManager.h"
 #include "Message.h"
 #include "ConsoleMenu.h"

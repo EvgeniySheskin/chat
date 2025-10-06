@@ -5,7 +5,7 @@ namespace chat
 	ConsoleMenu::ConsoleMenu() = default;
 	ConsoleMenu::~ConsoleMenu() = default;
 
-	ConsoleMenu* ConsoleMenu::addItem(const std::string& text, std::function<void()> action) 
+	ConsoleMenu* ConsoleMenu::AddItem(const std::string& text, std::function<void()> action) 
 	{
 		m_Items.push_back(std::make_unique<MenuItem>(text, std::move(action)));
 		return this;
@@ -26,7 +26,7 @@ namespace chat
 		}*/
 		return os;
 	}
-	void ConsoleMenu::run() {
+	void ConsoleMenu::Run() {
 		if (m_Items.empty()) {
 			std::cout << "Меню пусто.\n";
 			return;

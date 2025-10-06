@@ -24,7 +24,7 @@ namespace chat
         const std::string& GetPassword() const noexcept { return m_Password; }
         const std::string& GetNickname() const noexcept { return m_Nickname; }
 
-        // Сравнение логина — эффективно и ясно
+        // Сравнение логина
         bool HasLogin(const std::string& login) const noexcept { return m_Login == login; }
 
         // Оператор вывода

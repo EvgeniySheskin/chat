@@ -1,4 +1,6 @@
-﻿#pragma once
+﻿/*Пункт меню
+Содержит название и исполняемую функцию (возможна передача в виде лямбды)*/
+#pragma once
 #include <iostream>
 #include <string>
 #include <functional>

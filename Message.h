@@ -1,4 +1,6 @@
-﻿#pragma once
+﻿/*Класс сообщения
+Хранит данные о содержании, отправителе и получателе*/
+#pragma once
 #include <string>
 #include <ctime>
 

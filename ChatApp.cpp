@@ -18,19 +18,19 @@ namespace chat
     void ChatApp::ShowMainMenu() 
     {
         ConsoleMenu menu;
-        menu.addItem("Войти", [this]() { HandleLogin(); });
-        menu.addItem("Зарегистрироваться", [this]() { HandleRegister(); });
-        menu.addItem("Выход", [this]() { HandleExit(); });
-        menu.run();
+        menu.AddItem("Войти", [this]() { HandleLogin(); });
+        menu.AddItem("Зарегистрироваться", [this]() { HandleRegister(); });
+        menu.AddItem("Выход", [this]() { HandleExit(); });
+        menu.Run();
     }
 
     void ChatApp::ShowChatMenu() 
     {
         ConsoleMenu menu;
-        menu.addItem("Отправить сообщение", [this]() { HandleSendMessage(); });
-        menu.addItem("Просмотреть сообщения", [this]() { HandleViewMessages(); });
-        menu.addItem("Выйти из аккаунта", [this]() { HandleLogout(); });
-        menu.run();
+        menu.AddItem("Отправить сообщение", [this]() { HandleSendMessage(); });
+        menu.AddItem("Просмотреть сообщения", [this]() { HandleViewMessages(); });
+        menu.AddItem("Выйти из аккаунта", [this]() { HandleLogout(); });
+        menu.Run();
     }
 
     void ChatApp::HandleRegister() 
