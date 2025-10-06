@@ -1,23 +1,38 @@
-#pragma once
+﻿#pragma once
+
 #include <string>
-using namespace std;
-class User
+#include <iosfwd>
+
+namespace chat
 {
-public:
-	User() = default;
-	User(string login, string password, string nickname);
-	User (User&& other) noexcept;
-	User& operator=(User&& other) noexcept;
+    class User
+    {
+    public:
+        // Конструкторы
+        User() = default;
+        User(const std::string& login, const std::string& password, const std::string& nickname);
 
-	string GetNickname();
-	void CheckUser(string login);
-	bool CompareLogin(string login);
-	~User() = default;
-	string GetLogin();
-	friend ostream& operator<<(ostream& os, User& user);
+        // Правило пяти 
+        User(const User&) = default;
+        User(User&&) noexcept = default;
+        User& operator=(const User&) = default;
+        User& operator=(User&&) noexcept = default;
+        ~User() = default;
 
-private:
-	string m_login;
-	string m_password;
-	string m_nickname;
-};
+        // Геттеры
+        const std::string& GetLogin() const noexcept { return m_Login; }
+        const std::string& GetPassword() const noexcept { return m_Password; }
+        const std::string& GetNickname() const noexcept { return m_Nickname; }
+
+        // Сравнение логина — эффективно и ясно
+        bool HasLogin(const std::string& login) const noexcept { return m_Login == login; }
+
+        // Оператор вывода
+        friend std::ostream& operator<<(std::ostream& os, const User& user);
+
+    private:
+        std::string m_Login;
+        std::string m_Password;
+        std::string m_Nickname;
+    };
+}
