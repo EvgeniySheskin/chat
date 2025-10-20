@@ -4,16 +4,29 @@
 
 namespace chat
 {
+
     UserManager::UserManager() 
     {
         m_ActiveUser = nullptr;
     }
 
+constexpr auto MIN_PASS_LENGTH = 6;
+
+
     void UserManager::ValidatePassword(const std::string& password) const 
     {
         if (password.size() < 6) 
         {
+
             throw std::invalid_argument("Пароль должен содержать как минимум 6 символов.\n");
+
+            throw std::invalid_argument("Пустой пароль задавать нельзя!");
+        }
+        if (password.size() < MIN_PASS_LENGTH)
+        {
+            std::string msg = "Пароль должен содержать минимум " + to_string(MIN_PASS_LENGTH) + " символов";
+            throw std::invalid_argument(msg);
+
         }
         // Требует хотя бы одну цифру и хотя бы один спецсимвол
         bool hasDigit = std::regex_search(password, std::regex(R"(\d)"));
