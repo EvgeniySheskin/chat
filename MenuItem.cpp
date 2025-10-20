@@ -1,18 +1,23 @@
 #include "MenuItem.h"
+#include <stdexcept>
 
-namespace chat
-{
-	MenuItem::MenuItem(const std::string& text, std::function<void()> action)
-		: m_Text(text), m_Action(std::move(action)) {
-	}
+namespace chat {
 
-	const std::string& MenuItem::getText() const {
-		return m_Text;
-	}
+    MenuItem::MenuItem(std::string text, std::function<void()> action)
+        : m_text(std::move(text))
+        , m_action(std::move(action))
+    {
+        if (!m_action) {
+            throw std::invalid_argument("MenuItem action must not be null");
+        }
+    }
 
-	void MenuItem::execute() const {
-		if (m_Action) {
-			m_Action();
-		}
-	}
+    const std::string& MenuItem::getText() const noexcept {
+        return m_text;
+    }
+
+    void MenuItem::execute() const {
+        m_action();
+    }
+
 }

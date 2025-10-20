@@ -1,97 +1,79 @@
 ﻿#include "UserManager.h"
 #include <iostream>
 #include <regex>
+#include <algorithm>
+#include <vector>
 
-namespace chat
+namespace chat 
 {
-    UserManager::UserManager() 
-    {
-        m_ActiveUser = nullptr;
-    }
+constexpr auto MAX_PASS_LENGTH = 6;
 
     void UserManager::ValidatePassword(const std::string& password) const 
     {
-        if (password.size() < 6) 
+        if (password.empty()) 
         {
-            throw std::invalid_argument("Пароль должен содержать как минимум 6 символов.\n");
+            throw std::invalid_argument("Пустой пароль задавать нельзя!");
         }
-        // Требует хотя бы одну цифру и хотя бы один спецсимвол
+        if (password.size() < MAX_PASS_LENGTH)
+        {
+            std::string msg = "Пароль должен содержать минимум " + to_string(MAX_PASS_LENGTH) + " символов";
+            throw std::invalid_argument(msg);
+        }
         bool hasDigit = std::regex_search(password, std::regex(R"(\d)"));
         bool hasSpecial = std::regex_search(password, std::regex(R"([\$&*!])"));
-
         if (!hasDigit || !hasSpecial) 
         {
             throw std::invalid_argument("Пароль должен содержать как минимум одну цифру и один спецсимвол: $, &, *, !");
         }
     }
 
-    bool UserManager::IsNicknameAvailable(const std::string& nick) const
+    bool UserManager::IsLoginAvailable(const std::string& login) const noexcept 
     {
-        for (const auto& user : m_RegisteredUsers)
-        {
-            if (user.GetNickname() == nick)
-            {
-                return false;
-            }
-        }
-        return true;
+        return m_users.find(login) == m_users.end();
     }
 
-    bool UserManager::IsLoginAvailable(const std::string& login) const 
+    void UserManager::AddNewUser(std::string login, std::string password, std::string nickname) 
     {
-        for (const auto& user : m_RegisteredUsers) 
-        {
-            if (user.GetLogin() == login) 
-            {
-                return false;
-            }
-        }
-        return true;
-    }
+        const std::string loginForOutput = login;
 
-    void UserManager::AddNewUser(const std::string& login, const std::string& password, const std::string& nickname) 
-    {
-        /*if (!IsLoginAvailable(login))
-        {
-            throw NewUserException("Юзер с таким логином уже есть");
+        /*if (!IsLoginAvailable(loginForOutput)) {
+            throw NewUserException("Пользователь с таким логином уже зарегистрирован");
         }
-
         ValidatePassword(password);*/
 
-        // Создаём и добавляем пользователя
-        m_RegisteredUsers.emplace_back(login, password, nickname);
-        std::cout << "Добро пожаловать в чат, " << m_RegisteredUsers.back().GetNickname() << "!\n\n";
+        m_users.emplace(
+            login, 
+            User{ loginForOutput, std::move(password), std::move(nickname) }
+        );
+        std::cout << "Доброе пожаловать в чат, " << m_users.at(login).GetNickname() << "!\n\n";
     }
 
     void UserManager::DeleteUser(const std::string& login) 
     {
-        for (auto it = m_RegisteredUsers.begin(); it != m_RegisteredUsers.end(); ++it) 
+        auto it = m_users.find(login);
+        if (it == m_users.end()) 
         {
-            if (it->GetLogin() == login) {
-                // Если удаляем активного пользователя — сбросить указатель
-                if (m_ActiveUser == &(*it)) 
-                {
-                    m_ActiveUser = nullptr;
-                }
-                m_RegisteredUsers.erase(it);
-                return;
-            }
+            throw NoSuchUserException(login);
         }
-        throw NoSuchUserException(login);
+        // Если удаляем активного — сбросить
+        if (m_activeUser == &it->second) 
+        {
+            m_activeUser = nullptr;
+        }
+        m_users.erase(it);
     }
 
     User* UserManager::FindUserByLogin(const std::string& login) noexcept 
     {
-        for (auto& user : m_RegisteredUsers) 
-        {
-            if (user.GetLogin() == login) 
-            {
-                return &user;
-            }
-        }
-        return nullptr;
+        auto it = m_users.find(login);
+        return (it != m_users.end()) ? &it->second : nullptr;
     }
 
+    const User* UserManager::FindUserByLogin(const std::string& login) const noexcept 
+    {
+        auto it = m_users.find(login);
+        return (it != m_users.end()) ? &it->second : nullptr;
+    }
 
     void UserManager::SetActiveUser(const std::string& login) 
     {
@@ -100,24 +82,17 @@ namespace chat
         {
             throw NoSuchUserException(login);
         }
-        m_ActiveUser = user;
+        m_activeUser = user;
     }
 
-    User& UserManager::operator[](size_t index) 
+    std::vector<const User*> UserManager::GetRegisteredUsers() const 
     {
-        if (index >= m_RegisteredUsers.size()) 
+        std::vector<const User*> result;
+        result.reserve(m_users.size());
+        for (const auto& pair : m_users) 
         {
-            throw std::out_of_range("UserManager::operator[]: index out of range");
+            result.push_back(&pair.second);
         }
-        return m_RegisteredUsers[index];
-    }
-
-    const User& UserManager::operator[](size_t index) const 
-    {
-        if (index >= m_RegisteredUsers.size()) 
-        {
-            throw std::out_of_range("UserManager::operator[]: index out of range");
-        }
-        return m_RegisteredUsers[index];
+        return result;
     }
 }
