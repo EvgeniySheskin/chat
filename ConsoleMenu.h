@@ -1,31 +1,35 @@
 ﻿#pragma once
-#include <iostream>
+#include "MenuItem.h"
 #include <vector>
 #include <memory>
 #include <functional>
 #include <string>
-#include "MenuItem.h"
 
-namespace chat
+namespace chat 
 {
-	class ConsoleMenu
-	{
-	private:
-		std::vector<std::unique_ptr<MenuItem>> m_Items;
-	public:
-		ConsoleMenu();
-		~ConsoleMenu();
-		ConsoleMenu* addItem(const std::string& text, std::function<void()> action);
-		// Запрет копирования
-		ConsoleMenu(const ConsoleMenu&) = delete;
-		ConsoleMenu& operator=(const ConsoleMenu&) = delete;
 
-		// Разрешить перемещение (опционально)
-		ConsoleMenu(ConsoleMenu&&) = default;
-		ConsoleMenu& operator=(ConsoleMenu&&) = default;
+    class ConsoleMenu 
+    {
+    public:
+        ConsoleMenu() = default;
+        ~ConsoleMenu() = default;
 
-		void run();
-		friend std::ostream& operator<<(std::ostream& os, ConsoleMenu& menu);
-		const std::vector<std::unique_ptr<MenuItem>>& GetItems() const;
-	};
+        // Запрет копирования
+        ConsoleMenu(const ConsoleMenu&) = delete;
+        ConsoleMenu& operator=(const ConsoleMenu&) = delete;
+
+        // Разрешение перемещения
+        ConsoleMenu(ConsoleMenu&&) noexcept = default;
+        ConsoleMenu& operator=(ConsoleMenu&&) noexcept = default;
+
+        // Добавление пункта (цепочка для fluent interface)
+        ConsoleMenu& addItem(std::string text, std::function<void()> action);
+
+        // Запуск меню
+        void run();
+
+    private:
+        std::vector<std::unique_ptr<MenuItem>> m_items;
+    };
+
 }

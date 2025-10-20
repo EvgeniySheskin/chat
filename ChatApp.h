@@ -3,24 +3,23 @@
 #include "Message.h"
 #include "ConsoleMenu.h"
 #include <vector>
-#include <memory>
+#include <string>
 
-namespace chat
-{
+namespace chat {
+
     class ChatApp {
     public:
         void Run();
 
     private:
-        UserManager m_UserManager;
-        std::vector<Message> m_Messages;
+        UserManager m_userManager;
+        std::vector<Message> m_messages;
 
         // Меню
         void ShowMainMenu();
         void ShowChatMenu();
-        //void ShowAuthMenu();
 
-        // Действия
+        // Обработчики
         void HandleRegister();
         void HandleLogin();
         void HandleLogout();
@@ -28,9 +27,9 @@ namespace chat
         void HandleViewMessages();
         void HandleExit();
 
+        // Вспомогательные методы
         bool IsUserLoggedIn() const;
         std::string GetActiveLogin() const;
-        std::string GetActiveNickname() const;
-
     };
+
 }
