@@ -1,31 +1,26 @@
-﻿/*Пункт меню
-Содержит название и исполняемую функцию (возможна передача в виде лямбды)*/
-#pragma once
-#include <iostream>
+﻿#pragma once
 #include <string>
 #include <functional>
 
-namespace chat
-{
-    class MenuItem
-    {
-    private:
-        std::string m_Text;
-        std::function<void()> m_Action;
+namespace chat {
 
+    class MenuItem {
     public:
-        MenuItem(const std::string& text, std::function<void()> action);
-        
+        MenuItem(std::string text, std::function<void()> action);
+
         // Запрет копирования
         MenuItem(const MenuItem&) = delete;
         MenuItem& operator=(const MenuItem&) = delete;
 
-        // Разрешение перемещения
+        // Разрешение перемещения (автоматически корректно)
         MenuItem(MenuItem&&) noexcept = default;
         MenuItem& operator=(MenuItem&&) noexcept = default;
 
-        const std::string& getText() const;
+        const std::string& getText() const noexcept;
         void execute() const;
-        ~MenuItem() = default;
+
+    private:
+        std::string m_text;
+        std::function<void()> m_action;
     };
 }

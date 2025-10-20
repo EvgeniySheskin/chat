@@ -4,12 +4,11 @@
 #include <string>
 #include <ctime>
 
-namespace chat
-{
-    class Message
-    {
+namespace chat {
+
+    class Message {
     public:
-        Message(const std::string& from, const std::string& to, const std::string& text);
+        Message(std::string from, std::string to, std::string text);
 
         const std::string& GetFrom() const { return m_from; }
         const std::string& GetTo() const { return m_to; }
@@ -21,8 +20,9 @@ namespace chat
 
     private:
         std::string m_from;
-        std::string m_to;       // пусто = общее сообщение
+        std::string m_to;
         std::string m_text;
         std::time_t m_timestamp;
     };
+
 }

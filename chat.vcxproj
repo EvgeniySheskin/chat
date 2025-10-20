@@ -137,6 +137,7 @@
   <ItemGroup>
     <ClInclude Include="ChatApp.h" />
     <ClInclude Include="ConsoleMenu.h" />
+    <ClInclude Include="LogoutException.h" />
     <ClInclude Include="MenuItem.h" />
     <ClInclude Include="Message.h" />
     <ClInclude Include="NewUserException.h" />
