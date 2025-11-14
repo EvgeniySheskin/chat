@@ -1,12 +1,12 @@
 ﻿#pragma once
-#include "../common/UserManager.h"
+
 #include "../common/Message.h"
 #include <unordered_map>
 #include <mutex>
-#include <vector>
 
 #define BUFFER_SIZE_SRV 4096
 #define PORT_SRV 7777
+
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -23,6 +23,8 @@ using ssize_t = int;
 #define SOCKET_ERROR -1
 #define closesocket close
 #endif
+
+#include "DatabaseManager.h"
 
 namespace chat
 {
@@ -45,9 +47,8 @@ namespace chat
         static void signalHandler(int signal);
         int m_port;
         SOCKET_TYPE m_serverSocket;
-        UserManager m_userManager;
-        std::vector<Message> m_messages;
         mutable std::mutex m_mutex;
         std::unordered_map<SOCKET_TYPE, std::string> m_sessions;
+        DatabaseManager m_db;
     };
 }

@@ -8,6 +8,7 @@ namespace chat
     {
     public:
         Message(std::string from, std::string to, std::string text);
+        Message(std::string from, std::string to, std::string text, std::time_t timestamp); 
         const std::string& GetFrom() const { return m_from; }
         const std::string& GetTo() const { return m_to; }
         const std::string& GetText() const { return m_text; }

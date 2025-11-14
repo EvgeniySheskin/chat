@@ -1,6 +1,7 @@
 ﻿#include "ChatServer.h"
 #include "../common/Protocol.h"
 #include "../common/Validation.h"
+#include "DatabaseManager.h"
 #include <iostream>
 #include <thread>
 #include <sstream>
@@ -18,7 +19,7 @@ namespace chat
 {
     ChatServer* ChatServer::instance = nullptr;
 
-    ChatServer::ChatServer(int port) : m_port(port), m_serverSocket(INVALID_SOCKET)
+    ChatServer::ChatServer(int port) : m_port(port), m_serverSocket(INVALID_SOCKET), m_db()
     {
 #ifdef _WIN32
         WSADATA wsaData;
@@ -29,6 +30,13 @@ namespace chat
 #endif
         instance = this;
         std::signal(SIGINT, signalHandler);
+
+        // Подключение к БД и инициализация
+        if (!m_db.connect("DRIVER={MySQL ODBC 9.5 ANSI Driver};SERVER=localhost;PORT=3306;UID=root;PWD=8lindGuardianMySQL;")) 
+        {
+            throw std::runtime_error("Database connection failed");
+        }
+        m_db.initDatabase();
     }
 
     ChatServer::~ChatServer()
@@ -161,7 +169,9 @@ namespace chat
                             break;
                         }
 
-                        if (!m_userManager.IsLoginAvailable(msg.sender))
+                        // Проверка доступности логина через БД
+                        auto existingUser = m_db.findUserByLogin(msg.sender);
+                        if (existingUser.has_value())
                         {
                             NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "ERROR: There is a user with the same login" };
                             safeSend(clientSocket, resp.serialize());
@@ -170,8 +180,8 @@ namespace chat
 
                         try
                         {
-                            m_userManager.AddNewUser(msg.sender, msg.payload, msg.recipient);
-                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "SUCCESS: Registration succssful! Now you need to authorize" };
+                            m_db.addUser(msg.sender, msg.payload, msg.recipient);
+                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "SUCCESS: Registration successful! Now you need to authorize" };
                             safeSend(clientSocket, resp.serialize());
                         }
                         catch (...)
@@ -186,18 +196,18 @@ namespace chat
                     {
                         if (msg.sender.empty())
                         {
-                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "ERROR: Login connot be blank." };
+                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "ERROR: Login cannot be blank." };
                             safeSend(clientSocket, resp.serialize());
                             break;
                         }
                         if (msg.payload.empty())
                         {
-                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "ERROR: Password connot be blank." };
+                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "ERROR: Password cannot be blank." };
                             safeSend(clientSocket, resp.serialize());
                             break;
                         }
 
-                        const User* user = m_userManager.FindUserByLogin(msg.sender);
+                        auto user = m_db.findUserByLogin(msg.sender);
                         if (user && user->GetPassword() == msg.payload)
                         {
                             currentLogin = msg.sender;
@@ -222,18 +232,14 @@ namespace chat
                             break;
                         }
 
-                        if (msg.recipient.empty())
+                        Message message(currentLogin, msg.recipient, msg.payload);
+                        if (m_db.addMessage(message))
                         {
-                            // Общее сообщение
-                            m_messages.emplace_back(currentLogin, "", msg.payload);
-                            std::cout << "[Server] New message added from " << currentLogin
-                                << ". Total messages: " << m_messages.size() << std::endl;
-
-                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "SUCCESS: Broadcast message sent" };
+                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "SUCCESS: Message sent" };
                             safeSend(clientSocket, resp.serialize());
 
-                            // Рассылаем сообщение всем онлайн-пользователям
-                            NetworkMessage broadcastMsg{ MessageType::SEND_MESSAGE, currentLogin, "", msg.payload };
+                            // Рассылка всем онлайн-пользователям
+                            NetworkMessage broadcastMsg{ MessageType::SEND_MESSAGE, currentLogin, msg.recipient, msg.payload };
                             std::string serialized = broadcastMsg.serialize();
                             for (const auto& session : m_sessions)
                             {
@@ -242,31 +248,8 @@ namespace chat
                         }
                         else
                         {
-                            // Личное сообщение
-                            m_messages.emplace_back(currentLogin, msg.recipient, msg.payload);
-                            std::cout << "[Server] New private message from " << currentLogin
-                                << " for " << msg.recipient << ". Total messages: " << m_messages.size() << std::endl;
-
-                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "SUCCESS: Personal message sent" };
+                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "ERROR: Failed to save message." };
                             safeSend(clientSocket, resp.serialize());
-
-                            bool recipientOnline = false;
-                            for (const auto& session : m_sessions)
-                            {
-                                if (session.second == msg.recipient)
-                                {
-                                    NetworkMessage privateMsg{ MessageType::SEND_MESSAGE, currentLogin, msg.recipient, msg.payload };
-                                    safeSend(session.first, privateMsg.serialize());
-                                    recipientOnline = true;
-                                    break;
-                                }
-                            }
-
-                            if (!recipientOnline)
-                            {
-                                NetworkMessage notify{ MessageType::STATUS_RESPONSE, "", "", "NOTIFICATION: User " + msg.recipient + " is offline" };
-                                safeSend(clientSocket, notify.serialize());
-                            }
                         }
                         break;
                     }
@@ -332,10 +315,11 @@ namespace chat
     void ChatServer::sendUserList(SOCKET_TYPE clientSocket)
     {
         std::string userList;
-        for (const auto& pair : m_userManager.GetAllUsers())
+        auto users = m_db.getAllUsers();
+        for (size_t i = 0; i < users.size(); ++i)
         {
-            if (!userList.empty()) userList += "|";
-            userList += pair.first;
+            if (i > 0) userList += "|";
+            userList += users[i].GetLogin();
         }
         NetworkMessage resp{ MessageType::USER_LIST, "", "", userList };
         safeSend(clientSocket, resp.serialize());
@@ -346,45 +330,41 @@ namespace chat
         std::string history;
         int messageCount = 0;
 
-        for (const auto& message : m_messages)
+        auto messages = m_db.getMessagesForUser(username);
+        for (const auto& message : messages)
         {
-            if (message.GetTo().empty() ||
-                message.GetFrom() == username ||
-                message.GetTo() == username)
+            std::string prefix = message.GetTo().empty() ? "[Broadcast] " : "[Personal] ";
+            std::string fromTo;
+            if (message.GetTo().empty())
             {
-                std::string prefix = message.GetTo().empty() ? "[Broadcast] " : "[Personal] ";
-                std::string fromTo;
-                if (message.GetTo().empty())
-                {
-                    fromTo = message.GetFrom();
-                }
+                fromTo = message.GetFrom();
+            }
+            else
+            {
+                if (message.GetFrom() == username)
+                    fromTo = "You -> " + message.GetTo();
                 else
-                {
-                    if (message.GetFrom() == username)
-                        fromTo = "You -> " + message.GetTo();
-                    else
-                        fromTo = message.GetFrom() + " -> To you";
-                }
+                    fromTo = message.GetFrom() + " -> To you";
+            }
 
-                std::time_t timestamp = message.GetTimestamp();
-                std::tm timeTm = {};
+            std::time_t timestamp = message.GetTimestamp();
+            std::tm timeTm = {};
 
 #ifdef _WIN32
-                localtime_s(&timeTm, &timestamp);
+            localtime_s(&timeTm, &timestamp);
 #else
-                timeTm = *std::localtime(&timestamp);
+            timeTm = *std::localtime(&timestamp);
 #endif
-                std::ostringstream timeStream;
-                timeStream << std::put_time(&timeTm, "%H:%M:%S");
-                std::string timeStr = timeStream.str();
+            std::ostringstream timeStream;
+            timeStream << std::put_time(&timeTm, "%H:%M:%S");
+            std::string timeStr = timeStream.str();
 
-                history += prefix
-                    + "["
-                    + timeStr
-                    + "] "
-                    + fromTo + ": " + message.GetText() + "\n";
-                messageCount++;
-            }
+            history += prefix
+                + "["
+                + timeStr
+                + "] "
+                + fromTo + ": " + message.GetText() + "\n";
+            messageCount++;
         }
 
         if (history.empty())
@@ -393,7 +373,7 @@ namespace chat
         }
 
         std::cout << "[Server] Sending history for " << username
-            << ". Total messages: " << m_messages.size()
+            << ". Total messages: " << messages.size()
             << ", shown: " << messageCount << std::endl;
 
         // добавим явный разделитель для корректной работы getline

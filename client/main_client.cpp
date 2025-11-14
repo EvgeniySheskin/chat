@@ -8,7 +8,7 @@
 #endif
 
 #ifndef IP_REMOTE
-#define IP_REMOTE "10.31.224.133"
+#define IP_REMOTE "127.0.0.1"
 #endif
 
 int main(int argc, char* argv[]) 

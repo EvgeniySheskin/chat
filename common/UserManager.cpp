@@ -34,7 +34,7 @@ namespace chat
         ValidatePassword(password);
         std::string key = login;
         m_users.emplace(std::move(key), User{ std::move(login), std::move(password), std::move(nickname) });
-        std::cout << "[UserManager] Зарегистрирован новый пользователь: " << key << std::endl;
+        std::cout << "[UserManager] New user registered: " << key << std::endl;
     }
 
     void UserManager::DeleteUser(const std::string& login)
