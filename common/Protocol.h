@@ -5,7 +5,7 @@
 
 namespace chat
 {
-    
+
     enum class MessageType : uint8_t
     {
         REGISTER,

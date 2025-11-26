@@ -2,6 +2,7 @@
 #include "../common/Protocol.h"
 #include "../common/Validation.h"
 #include "DatabaseManager.h"
+#include "../common/Logger.h"
 #include <iostream>
 #include <thread>
 #include <sstream>
@@ -17,9 +18,9 @@
 
 namespace chat
 {
-    ChatServer* ChatServer::instance = nullptr;
+    ChatServer* ChatServer::m_instance = nullptr;
 
-    ChatServer::ChatServer(int port) : m_port(port), m_serverSocket(INVALID_SOCKET), m_db()
+    ChatServer::ChatServer(int port) : m_port(port), m_serverSocket(INVALID_SOCKET), m_db(), m_logger(std::make_unique<Logger>("server.log"))
     {
 #ifdef _WIN32
         WSADATA wsaData;
@@ -28,25 +29,31 @@ namespace chat
             throw std::runtime_error("WSAStartup failed");
         }
 #endif
-        instance = this;
+        m_instance = this;
         std::signal(SIGINT, signalHandler);
 
-        // Подключение к БД и инициализация
-        if (!m_db.connect("DRIVER={MySQL ODBC 9.5 ANSI Driver};SERVER=localhost;PORT=3306;UID=root;PWD=8lindGuardianMySQL;")) 
+        m_logger->start();
+        m_logger->info("Server starting...");
+
+        if (!m_db.connect("DRIVER={MySQL ODBC 9.5 ANSI Driver};SERVER=localhost;PORT=3306;UID=root;PWD=8lindGuardianMySQL;"))
         {
+            m_logger->error("Database connection failed");
             throw std::runtime_error("Database connection failed");
         }
         m_db.initDatabase();
+        m_logger->info("Database connected and initialized.");
     }
 
     ChatServer::~ChatServer()
     {
+        m_logger->info("Server shutting down...");
         m_running = false;
         if (m_serverSocket != INVALID_SOCKET)
         {
             closesocket(m_serverSocket);
             m_serverSocket = INVALID_SOCKET;
         }
+        m_logger->stop();
 #ifdef _WIN32
         WSACleanup();
 #endif
@@ -57,7 +64,7 @@ namespace chat
         m_serverSocket = socket(AF_INET, SOCK_STREAM, 0);
         if (m_serverSocket == INVALID_SOCKET)
         {
-            std::cerr << "Socket creation failed\n";
+            m_logger->error("Socket creation failed");
             return;
         }
 
@@ -75,19 +82,19 @@ namespace chat
 
         if (bind(m_serverSocket, (sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR)
         {
-            std::cerr << "Bind failed\n";
+            m_logger->error("Bind failed");
             closesocket(m_serverSocket);
             return;
         }
 
         if (listen(m_serverSocket, 5) == SOCKET_ERROR)
         {
-            std::cerr << "Listen failed\n";
+            m_logger->error("Listen failed");
             closesocket(m_serverSocket);
             return;
         }
 
-        std::cout << "Server started on port " << m_port << "\n";
+        m_logger->info("Server started on port " + std::to_string(m_port));
 
         while (m_running)
         {
@@ -98,11 +105,28 @@ namespace chat
             if (clientSocket == INVALID_SOCKET)
             {
                 if (!m_running) break;
-                std::cerr << "Accept failed\n";
+                m_logger->error("Accept failed");
                 continue;
             }
 
-            std::cout << "[Server]: New client connected\n";
+#ifdef _WIN32
+            char clientIP[INET_ADDRSTRLEN];
+            DWORD clientIPLen = INET_ADDRSTRLEN;
+            if (InetNtopA(AF_INET, &clientAddr.sin_addr, clientIP, clientIPLen) != nullptr) {
+                m_logger->info("New client connected from " + std::string(clientIP));
+            }
+            else {
+                m_logger->info("New client connected from (could not resolve IP)");
+            }
+#else
+            char clientIP[INET_ADDRSTRLEN];
+            if (inet_ntop(AF_INET, &clientAddr.sin_addr, clientIP, INET_ADDRSTRLEN) != nullptr) {
+                m_logger->info("New client connected from " + std::string(clientIP));
+            }
+            else {
+                m_logger->info("New client connected from (could not resolve IP)");
+            }
+#endif
             if (m_running)
             {
                 std::thread(&ChatServer::handleClient, this, clientSocket).detach();
@@ -124,7 +148,7 @@ namespace chat
     void ChatServer::handleClient(SOCKET_TYPE clientSocket)
     {
         char buffer[BUFFER_SIZE_SRV];
-        std::string currentLogin;
+        std::string m_currentLogin;
 
 #ifdef _WIN32
         u_long mode = 1;
@@ -144,10 +168,7 @@ namespace chat
                 {
                     NetworkMessage msg = NetworkMessage::deserialize(buffer);
 
-                    std::cout << "[Server] Deserialized: type=" << static_cast<int>(msg.type)
-                        << ", sender=" << msg.sender << std::endl;
-
-                    std::lock_guard<std::mutex> lock(m_mutex);
+                    m_logger->debug("Deserialized: type=" + std::to_string(static_cast<int>(msg.type)) + ", sender=" + msg.sender);
 
                     switch (msg.type)
                     {
@@ -156,25 +177,38 @@ namespace chat
                         auto loginResult = chat::validateLogin(msg.sender);
                         if (!loginResult.success)
                         {
-                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "ERROR:" + loginResult.errorMessage };
+                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "L_ERROR:" + loginResult.errorMessage };
                             safeSend(clientSocket, resp.serialize());
+                            m_logger->warning("Registration failed for login '" + msg.sender + "': " + loginResult.errorMessage);
                             break;
                         }
 
-                        auto passResult = chat::validatePassword(msg.payload);
-                        if (!passResult.success)
+                        if (msg.payload.length() != 40) 
                         {
-                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "ERROR:" + passResult.errorMessage };
+                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "L_ERROR: Invalid password hash format." };
                             safeSend(clientSocket, resp.serialize());
+                            m_logger->warning("Registration failed for login '" + msg.sender + "': Invalid password hash length.");
+                            break;
+                        }
+                        bool isHex = std::all_of(msg.payload.begin(), msg.payload.end(), 
+                            [](char c) 
+                            {
+                                return std::isxdigit(static_cast<unsigned char>(c));
+                            });
+                        if (!isHex) 
+                        {
+                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "L_ERROR: Invalid password hash format." };
+                            safeSend(clientSocket, resp.serialize());
+                            m_logger->warning("Registration failed for login '" + msg.sender + "': Invalid password hash characters.");
                             break;
                         }
 
-                        // Проверка доступности логина через БД
                         auto existingUser = m_db.findUserByLogin(msg.sender);
                         if (existingUser.has_value())
                         {
-                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "ERROR: There is a user with the same login" };
+                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "L_ERROR: There is a user with the same login" };
                             safeSend(clientSocket, resp.serialize());
+                            m_logger->warning("Registration failed for login '" + msg.sender + "': Login already exists");
                             break;
                         }
 
@@ -183,11 +217,13 @@ namespace chat
                             m_db.addUser(msg.sender, msg.payload, msg.recipient);
                             NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "SUCCESS: Registration successful! Now you need to authorize" };
                             safeSend(clientSocket, resp.serialize());
+                            m_logger->info("New user registered: " + msg.sender);
                         }
                         catch (...)
                         {
-                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "ERROR: Server registration error" };
+                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "L_ERROR: Server registration error" };
                             safeSend(clientSocket, resp.serialize());
+                            m_logger->error("Server registration error for login: " + msg.sender);
                         }
                         break;
                     }
@@ -196,68 +232,106 @@ namespace chat
                     {
                         if (msg.sender.empty())
                         {
-                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "ERROR: Login cannot be blank." };
+                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "L_ERROR: Login cannot be blank." };
                             safeSend(clientSocket, resp.serialize());
                             break;
                         }
-                        if (msg.payload.empty())
+                        if (msg.payload.length() != 40) 
                         {
-                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "ERROR: Password cannot be blank." };
+                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "L_ERROR: Invalid password hash format." };
                             safeSend(clientSocket, resp.serialize());
+                            m_logger->warning("Login failed for '" + msg.sender + "': Invalid password hash length.");
+                            break;
+                        }
+                        bool isHex = std::all_of(msg.payload.begin(), msg.payload.end(), 
+                            [](char c) 
+                            {
+                                return std::isxdigit(static_cast<unsigned char>(c));
+                            });
+                        if (!isHex) 
+                        {
+                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "L_ERROR: Invalid password hash format." };
+                            safeSend(clientSocket, resp.serialize());
+                            m_logger->warning("Login failed for '" + msg.sender + "': Invalid password hash characters.");
                             break;
                         }
 
                         auto user = m_db.findUserByLogin(msg.sender);
-                        if (user && user->GetPassword() == msg.payload)
+                        if (user) 
                         {
-                            currentLogin = msg.sender;
-                            m_sessions[clientSocket] = currentLogin;
-                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "SUCCESS: Successful login!" };
-                            safeSend(clientSocket, resp.serialize());
+                            if (user->GetPassword() == msg.payload) 
+                            {
+                                m_currentLogin = msg.sender;
+                                {
+                                    std::lock_guard<std::shared_mutex> lock(m_sessions_mutex); 
+                                    m_sessions[clientSocket] = m_currentLogin;
+                                }
+                                NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "SUCCESS: Successful login!" };
+                                safeSend(clientSocket, resp.serialize());
+                                m_logger->info("User logged in: " + m_currentLogin);
+                            }
+                            else 
+                            {
+                                NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "L_ERROR: Incorrect login or password." };
+                                safeSend(clientSocket, resp.serialize());
+                                m_logger->warning("Login failed for: " + msg.sender + " (password hash mismatch)");
+                            }
                         }
-                        else
+                        else 
                         {
-                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "ERROR: Incorrect login or password." };
+                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "L_ERROR: Incorrect login or password." };
                             safeSend(clientSocket, resp.serialize());
+                            m_logger->warning("Login failed for: " + msg.sender + " (user not found)");
                         }
                         break;
                     }
 
                     case MessageType::SEND_MESSAGE:
                     {
-                        if (currentLogin.empty())
+                        if (m_currentLogin.empty())
                         {
-                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "ERROR: Unauthorized access." };
+                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "L_ERROR: Unauthorized access." };
                             safeSend(clientSocket, resp.serialize());
+                            m_logger->warning("Unauthorized message attempt from socket.");
                             break;
                         }
 
-                        Message message(currentLogin, msg.recipient, msg.payload);
+                        Message message(m_currentLogin, msg.recipient, msg.payload);
                         if (m_db.addMessage(message))
                         {
                             NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "SUCCESS: Message sent" };
                             safeSend(clientSocket, resp.serialize());
+                            m_logger->debug("Message saved to DB from " + m_currentLogin);
 
-                            // Рассылка всем онлайн-пользователям
-                            NetworkMessage broadcastMsg{ MessageType::SEND_MESSAGE, currentLogin, msg.recipient, msg.payload };
+                            NetworkMessage broadcastMsg{ MessageType::SEND_MESSAGE, m_currentLogin, msg.recipient, msg.payload };
                             std::string serialized = broadcastMsg.serialize();
+
+                            std::shared_lock<std::shared_mutex> lock(m_sessions_mutex);
                             for (const auto& session : m_sessions)
                             {
                                 safeSend(session.first, serialized);
                             }
+                            lock.unlock(); 
+
+                            m_logger->info("Message broadcasted from " + m_currentLogin + " to " + std::to_string(m_sessions.size()) + " users.");
                         }
                         else
                         {
-                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "ERROR: Failed to save message." };
+                            NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "L_ERROR: Failed to save message." };
                             safeSend(clientSocket, resp.serialize());
+                            m_logger->error("Failed to save message from " + m_currentLogin);
                         }
                         break;
                     }
 
                     case MessageType::LOGOUT:
                     {
-                        m_sessions.erase(clientSocket);
-                        currentLogin.clear();
+                        {
+                            std::lock_guard<std::shared_mutex> lock(m_sessions_mutex); 
+                            m_sessions.erase(clientSocket);
+                        }
+                        m_logger->info("User logged out: " + m_currentLogin);
+                        m_currentLogin.clear();
                         NetworkMessage resp{ MessageType::STATUS_RESPONSE, "", "", "SUCCESS: Successful logout!" };
                         safeSend(clientSocket, resp.serialize());
                         break;
@@ -271,7 +345,7 @@ namespace chat
 
                     case MessageType::GET_HISTORY:
                     {
-                        sendMessageHistory(clientSocket, currentLogin);
+                        sendMessageHistory(clientSocket, m_currentLogin);
                         break;
                     }
 
@@ -281,7 +355,7 @@ namespace chat
                 }
                 catch (const std::exception& e)
                 {
-                    std::cout << "[Server] Deserialization error: " << e.what() << std::endl;
+                    m_logger->error("Deserialization error: " + std::string(e.what()));
                     break;
                 }
             }
@@ -304,9 +378,9 @@ namespace chat
                 }
             }
 
-        std::cout << "[Server] Client disconnected: " << currentLogin << "\n";
+        m_logger->info("Client disconnected: " + m_currentLogin);
         {
-            std::lock_guard<std::mutex> lock(m_mutex);
+            std::lock_guard<std::shared_mutex> lock(m_sessions_mutex);
             m_sessions.erase(clientSocket);
         }
         closesocket(clientSocket);
@@ -333,9 +407,9 @@ namespace chat
         auto messages = m_db.getMessagesForUser(username);
         for (const auto& message : messages)
         {
-            std::string prefix = message.GetTo().empty() ? "[Broadcast] " : "[Personal] ";
+            std::string prefix = message.IsPrivate() ? "[Personal] " : "[Broadcast] ";
             std::string fromTo;
-            if (message.GetTo().empty())
+            if (!message.IsPrivate())
             {
                 fromTo = message.GetFrom();
             }
@@ -372,9 +446,7 @@ namespace chat
             history = "Message history is empty";
         }
 
-        std::cout << "[Server] Sending history for " << username
-            << ". Total messages: " << messages.size()
-            << ", shown: " << messageCount << std::endl;
+        m_logger->debug("Sending history for " + username + ". Total messages: " + std::to_string(messages.size()) + ", shown: " + std::to_string(messageCount));
 
         // добавим явный разделитель для корректной работы getline
         history += (char)0;
@@ -398,9 +470,9 @@ namespace chat
 
     void ChatServer::signalHandler(int signal)
     {
-        if (instance)
+        if (m_instance)
         {
-            instance->m_running = false;
+            m_instance->m_running = false;
         }
     }
 }

@@ -1,7 +1,6 @@
 ﻿#include "ChatServer.h"
 #include <iostream>
 
-
 #ifdef __linux__
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -11,43 +10,43 @@
 #include <unistd.h>
 #include <string.h>
 
-void killProcessOnPort(int port) 
+void killProcessOnPort(int port)
 {
     char command[256];
     snprintf(command, sizeof(command), "lsof -t -i:%d -sTCP:LISTEN", port);
     FILE* fp = popen(command, "r");
-    if (fp) 
+    if (fp)
     {
         char pid_str[16];
         pid_t current_pid = getpid();
 
-        while (fgets(pid_str, sizeof(pid_str), fp) != nullptr) 
+        while (fgets(pid_str, sizeof(pid_str), fp) != nullptr)
         {
             pid_str[strcspn(pid_str, "\n")] = 0;
             int pid = atoi(pid_str);
 
-            if (pid > 0 && pid != current_pid) 
+            if (pid > 0 && pid != current_pid)
             {
                 std::cout << "Завершение процесса с PID " << pid << ", использующего порт " << port << std::endl;
 
-                if (kill(pid, SIGTERM) == 0) 
+                if (kill(pid, SIGTERM) == 0)
                 {
-                    for (int i = 0; i < 30; ++i) 
+                    for (int i = 0; i < 30; ++i)
                     {
-                        if (kill(pid, 0) != 0) 
+                        if (kill(pid, 0) != 0)
                         {
                             break;
                         }
                         usleep(100000);
                     }
 
-                    if (kill(pid, 0) == 0) 
+                    if (kill(pid, 0) == 0)
                     {
                         std::cout << "SIGTERM не сработал, отправляем SIGKILL..." << std::endl;
                         kill(pid, SIGKILL);
                     }
                 }
-                else 
+                else
                 {
                     kill(pid, SIGKILL);
                 }
@@ -61,7 +60,7 @@ void killProcessOnPort(int port)
 }
 #endif
 
-int main() 
+int main()
 {
 #ifdef _WIN32
     //system("chcp 65001 > nul"); // UTF-8
@@ -77,10 +76,9 @@ int main()
         killProcessOnPort(PORT_SRV); // Убиваем процесс на порту
 #endif
         chat::ChatServer server(PORT_SRV);
-        //std::cout << "Сервер запущен...\n";
         server.run();
     }
-    catch (const std::exception& e) 
+    catch (const std::exception& e)
     {
         std::cerr << "Ошибка сервера: " << e.what() << std::endl;
         return 1;

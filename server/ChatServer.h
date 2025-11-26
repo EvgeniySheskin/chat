@@ -2,7 +2,8 @@
 
 #include "../common/Message.h"
 #include <unordered_map>
-#include <mutex>
+#include <shared_mutex> 
+#include <memory>
 
 #define BUFFER_SIZE_SRV 4096
 #define PORT_SRV 7777
@@ -25,6 +26,7 @@ using ssize_t = int;
 #endif
 
 #include "DatabaseManager.h"
+#include "../common/Logger.h"
 
 namespace chat
 {
@@ -43,12 +45,13 @@ namespace chat
         void notifyNewMessage(const std::string& recipient, const std::string& from, const std::string& message, bool isPrivate);
 
         volatile bool m_running = true;
-        static ChatServer* instance;
+        static ChatServer* m_instance;
         static void signalHandler(int signal);
         int m_port;
         SOCKET_TYPE m_serverSocket;
-        mutable std::mutex m_mutex;
+        mutable std::shared_mutex m_sessions_mutex; 
         std::unordered_map<SOCKET_TYPE, std::string> m_sessions;
         DatabaseManager m_db;
+        std::unique_ptr<Logger> m_logger;
     };
 }

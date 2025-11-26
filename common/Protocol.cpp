@@ -2,12 +2,10 @@
 #include <sstream>
 #include <stdexcept>
 
-
-
-namespace chat 
+namespace chat
 {
     const char DELIM = 0;
-    std::string NetworkMessage::serialize() const 
+    std::string NetworkMessage::serialize() const
     {
         std::ostringstream oss;
         oss << static_cast<int>(type) << "|"
@@ -17,12 +15,11 @@ namespace chat
         return oss.str();
     }
 
-    NetworkMessage NetworkMessage::deserialize(const std::string& data) 
+    NetworkMessage NetworkMessage::deserialize(const std::string& data)
     {
         NetworkMessage msg;
         std::istringstream iss(data);
         std::string typeStr;
-        //iss.ignore(1000);
         if (std::getline(iss, typeStr, '|'))
         {
             msg.type = static_cast<MessageType>(std::stoi(typeStr));

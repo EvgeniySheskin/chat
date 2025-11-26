@@ -2,6 +2,7 @@
 
 #include "../common/User.h"
 #include "../common/Message.h"
+#include "../common/sha1.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -16,6 +17,7 @@
 #include <ctime>
 #include <map>
 #include <optional>
+#include <mutex>
 
 namespace chat
 {
@@ -29,7 +31,7 @@ namespace chat
         bool connect(const std::string& connStr);
         void initDatabase();
 
-        bool addUser(const std::string& login, const std::string& password, const std::string& nickname);
+        bool addUser(const std::string& login, const std::string& password_hash, const std::string& nickname);
         std::optional<User> findUserByLogin(const std::string& login);
         std::vector<User> getAllUsers();
         int getUserIDByLogin(const std::string& login);
@@ -42,8 +44,14 @@ namespace chat
         SQLHANDLE m_conn{ nullptr };
         SQLHANDLE m_stmt{ nullptr };
 
-        bool executeQuery(const std::string& query);
+        std::mutex m_db_mutex; 
+
+        bool executePreparedQuery();
         std::vector<std::map<std::string, std::string>> fetchResults();
+
+        bool prepareStatement(const std::string& query);
+        bool bindParameter(int param_index, const std::string& value, SQLLEN* indicator);
+        bool bindParameter(int param_index, int value, SQLLEN* indicator);
     };
 
 }
