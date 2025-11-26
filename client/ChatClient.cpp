@@ -13,10 +13,10 @@
 
 namespace chat
 {
-    ChatClient* ChatClient::instance = nullptr;
+    ChatClient* ChatClient::m_instance = nullptr; 
 
     ChatClient::ChatClient(const std::string& serverIp, int port)
-        : m_serverIp(serverIp), m_port(port), m_socket(INVALID_SOCKET)
+        : m_serverIp(serverIp), m_port(port), m_socket(INVALID_SOCKET), m_logger(std::make_unique<Logger>("client.log"))
     {
 #ifdef _WIN32
         WSADATA wsaData;
@@ -25,21 +25,29 @@ namespace chat
             throw std::runtime_error("WSAStartup failed");
         }
 #endif
-        instance = this;
+        m_instance = this;
         std::signal(SIGINT, signalHandler);
+
+        m_logger->start(); 
+        m_logger->info("Client starting...");
     }
 
-    ChatClient::~ChatClient() {
+    ChatClient::~ChatClient()
+    {
+        m_logger->info("Client shutting down...");
         m_running = false;
-        if (m_receiverThread.joinable()) {
+        if (m_receiverThread.joinable())
+        {
             m_receiverThread.join();
         }
-        if (m_socket != INVALID_SOCKET) {
+        if (m_socket != INVALID_SOCKET)
+        {
             closesocket(m_socket);
         }
 #ifdef _WIN32
         WSACleanup();
 #endif
+        m_logger->stop(); 
     }
 
     void ChatClient::run()
@@ -47,8 +55,10 @@ namespace chat
         if (!connectToServer())
         {
             std::cout << "Error: Unable to connect to server.\n";
+            m_logger->error("Unable to connect to server.");
             return;
         }
+        m_logger->info("Connected to server " + m_serverIp + ":" + std::to_string(m_port));
 
         m_receiverThread = std::thread(&ChatClient::receiveMessages, this);
 
@@ -77,7 +87,7 @@ namespace chat
         m_socket = socket(AF_INET, SOCK_STREAM, 0);
         if (m_socket == INVALID_SOCKET)
         {
-            std::cerr << "Socket creation failed\n";
+            m_logger->error("Socket creation failed");
             return false;
         }
 
@@ -87,14 +97,14 @@ namespace chat
 
         if (inet_pton(AF_INET, m_serverIp.c_str(), &serverAddr.sin_addr) <= 0)
         {
-            std::cerr << "Invalid address\n";
+            m_logger->error("Invalid address: " + m_serverIp);
             closesocket(m_socket);
             return false;
         }
 
         if (connect(m_socket, (sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR)
         {
-            std::cerr << "Connection failed\n";
+            m_logger->error("Connection failed to " + m_serverIp + ":" + std::to_string(m_port));
             closesocket(m_socket);
             m_socket = INVALID_SOCKET;
             return false;
@@ -158,12 +168,14 @@ namespace chat
                 catch (const std::exception& e)
                 {
                     std::cout << "\n[Deserialization error] " << e.what() << std::endl;
+                    m_logger->error("Deserialization error: " + std::string(e.what()));
                     m_waitingForResponse = false;
                 }
             }
             else if (bytes == 0)
             {
                 std::cout << "\nServer suspended connection\n";
+                m_logger->info("Server closed connection.");
                 m_running = false;
             }
             else
@@ -176,6 +188,7 @@ namespace chat
                 {
 #endif
                     std::cout << "\nData accept failed\n";
+                    m_logger->error("Data receive failed: " + std::to_string(errno));
                     m_running = false;
                 }
                 }
@@ -189,13 +202,14 @@ namespace chat
         int waitCount = 0;
         while (m_waitingForResponse && m_running && waitCount < 40)
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(250));
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
             waitCount++;
         }
 
         if (m_waitingForResponse)
         {
             std::cout << "Server response timeout\n";
+            m_logger->warning("Server response timeout.");
             m_waitingForResponse = false;
         }
     }
@@ -254,7 +268,8 @@ namespace chat
             requestMessageHistory();
             waitForStatusResponse();
         }
-        if (m_userList.empty()) {
+        if (m_userList.empty())
+        {
             requestUserList();
             waitForStatusResponse();
         }
@@ -265,7 +280,7 @@ namespace chat
             displayMessageHistory();
             std::cout << "=== Chat ( " << m_currentLogin << " ) ===\n\n";
 
-            if (m_hasNewMessages) 
+            if (m_hasNewMessages)
             {
                 std::cout << "You have new messages!\n";
                 m_hasNewMessages = false;
@@ -304,6 +319,7 @@ namespace chat
                 NetworkMessage logoutMsg{ MessageType::LOGOUT, m_currentLogin, "", "" };
                 safeSend(logoutMsg.serialize());
                 std::cout << "Logging out...\n";
+                m_logger->info("User " + m_currentLogin + " logging out.");
                 waitForStatusResponse();
                 break;
             }
@@ -339,7 +355,7 @@ namespace chat
 
     void ChatClient::sendToAll()
     {
-        
+
         std::string message;
         while (true)
         {
@@ -352,6 +368,7 @@ namespace chat
                 NetworkMessage msg{ MessageType::SEND_MESSAGE, m_currentLogin, "", message };
                 safeSend(msg.serialize());
                 std::cout << "Sending message...\n";
+                m_logger->debug("Sending broadcast message: " + message);
                 waitForStatusResponse();
 
                 // Обновляем историю после отправки
@@ -365,7 +382,7 @@ namespace chat
                 break;
             }
         }
-        
+
     }
 
     void ChatClient::sendPrivate()
@@ -411,6 +428,7 @@ namespace chat
             NetworkMessage msg{ MessageType::SEND_MESSAGE, m_currentLogin, recipient, message };
             safeSend(msg.serialize());
             std::cout << "Sending personal message...\n";
+            m_logger->debug("Sending private message to " + recipient + ": " + message);
             waitForStatusResponse();
 
             requestMessageHistory();
@@ -433,12 +451,14 @@ namespace chat
     {
         NetworkMessage msg{ MessageType::GET_USERS, m_currentLogin, "", "" };
         safeSend(msg.serialize());
+        m_logger->debug("Requesting user list.");
     }
 
     void ChatClient::requestMessageHistory()
     {
         NetworkMessage msg{ MessageType::GET_HISTORY, m_currentLogin, "", "" };
         safeSend(msg.serialize());
+        m_logger->debug("Requesting message history.");
     }
 
     void ChatClient::handleUserList(const std::string & userListData)
@@ -456,12 +476,14 @@ namespace chat
         }
 
         std::cout << "User list is refreshed. " << m_userList.size() << " user(s) available.\n";
+        m_logger->debug("User list refreshed. " + std::to_string(m_userList.size()) + " users available.");
         m_waitingForResponse = false;
     }
 
     void ChatClient::handleMessageHistory(const std::string & history)
     {
         m_messageHistory = history;
+        m_logger->debug("Received message history.");
         m_waitingForResponse = false;
     }
 
@@ -471,12 +493,13 @@ namespace chat
         {
             std::string message = response.substr(8);
             std::cout << message << std::endl;
+            m_logger->info("Status response (SUCCESS): " + message);
 
             if (message.find("Successful login") != std::string::npos)
             {
                 m_authenticated = true;
             }
-                else if (message.find("Successful logout") != std::string::npos)
+            else if (message.find("Successful logout") != std::string::npos)
             {
                 m_authenticated = false;
                 m_currentLogin.clear();
@@ -488,11 +511,13 @@ namespace chat
         {
             std::string message = response.substr(6);
             std::cout << message << std::endl;
+            m_logger->error("Status response (ERROR): " + message);
         }
         else if (response.find("NOTIFICATION:") == 0)
         {
             std::string message = response.substr(13);
             std::cout << message << std::endl;
+            m_logger->info("Status response (NOTIFICATION): " + message);
             m_hasNewMessages = true;
         }
 
@@ -514,20 +539,24 @@ namespace chat
         if (!loginResult.success)
         {
             std::cout << "\nError: " << loginResult.errorMessage << "\n";
+            m_logger->warning("Registration failed for login '" + login + "': " + loginResult.errorMessage);
             return;
         }
         auto passResult = validatePassword(password);
         if (!passResult.success)
         {
             std::cout << "\nError: " << passResult.errorMessage << "\n";
+            m_logger->warning("Registration failed for login '" + login + "': " + passResult.errorMessage);
             return;
         }
 
         m_currentLogin = login;
 
-        NetworkMessage reg{ MessageType::REGISTER, login, nickname, password };
+        std::string password_hash = sha1::hash(password);
+        NetworkMessage reg{ MessageType::REGISTER, login, nickname, password_hash };
         safeSend(reg.serialize());
         std::cout << "Registration...\n";
+        m_logger->info("Sending registration request for login: " + login);
     }
 
     void ChatClient::handleLogin()
@@ -547,9 +576,12 @@ namespace chat
 
         m_currentLogin = login;
 
-        NetworkMessage auth{ MessageType::LOGIN, login, "", password };
+        std::string password_hash = sha1::hash(password);
+        std::cerr << "[DEBUG]: Password hash: " + password_hash << std::endl;
+        NetworkMessage auth{ MessageType::LOGIN, login, "", password_hash };
         safeSend(auth.serialize());
         std::cout << "Authorization...\n";
+        m_logger->info("Sending login request for login: " + login);
     }
 
     void ChatClient::safeSend(const std::string & data)
@@ -561,6 +593,7 @@ namespace chat
             if (sent <= 0)
             {
                 std::cout << "Data send error\n";
+                m_logger->error("Data send error");
                 return;
             }
             totalSent += sent;
@@ -569,9 +602,9 @@ namespace chat
 
     void ChatClient::signalHandler(int signal)
     {
-        if (instance)
+        if (m_instance) 
         {
-            instance->m_running = false;
+            m_instance->m_running = false;
         }
     }
 }

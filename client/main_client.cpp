@@ -1,6 +1,6 @@
 ﻿#include "ChatClient.h"
 #include <iostream>
-#include <cstdlib> // для std::atoi
+#include <cstdlib>
 
 // Значения по умолчанию
 #ifndef PORT_CLIENT
@@ -11,7 +11,7 @@
 #define IP_REMOTE "127.0.0.1"
 #endif
 
-int main(int argc, char* argv[]) 
+int main(int argc, char* argv[])
 {
 #ifdef _WIN32
     //system("chcp 65001 > nul"); // UTF-8
@@ -25,26 +25,26 @@ int main(int argc, char* argv[])
     std::string serverIp = IP_REMOTE;
     int port = PORT_CLIENT;
 
-    if (argc >= 2) 
+    if (argc >= 2)
     {
         serverIp = argv[1];
 
-        if (argc >= 3) 
+        if (argc >= 3)
         {
-            try 
+            try
             {
                 int tempPort = std::atoi(argv[2]);
-                if (tempPort >= 1024 && tempPort < 65536) 
+                if (tempPort >= 1024 && tempPort < 65536)
                 {
                     port = tempPort;
                 }
-                else 
+                else
                 {
                     std::cerr << "Ошибка: порт должен быть числом от 1024 до 65535.\n";
                     return 1;
                 }
             }
-            catch (...) 
+            catch (...)
             {
                 std::cerr << "Ошибка: порт должен быть числом от 1024 до 65535.\n";
                 return 1;

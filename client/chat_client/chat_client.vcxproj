@@ -102,6 +102,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -124,9 +125,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\common\ConsoleMenu.cpp" />
+    <ClCompile Include="..\..\common\FileHandler.cpp" />
+    <ClCompile Include="..\..\common\Logger.cpp" />
     <ClCompile Include="..\..\common\MenuItem.cpp" />
     <ClCompile Include="..\..\common\Message.cpp" />
     <ClCompile Include="..\..\common\Protocol.cpp" />
+    <ClCompile Include="..\..\common\sha1.cpp" />
     <ClCompile Include="..\..\common\User.cpp" />
     <ClCompile Include="..\..\common\UserException.cpp" />
     <ClCompile Include="..\..\common\UserManager.cpp" />
@@ -136,10 +140,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\common\ConsoleMenu.h" />
+    <ClInclude Include="..\..\common\FileHandler.h" />
+    <ClInclude Include="..\..\common\Logger.h" />
     <ClInclude Include="..\..\common\LogoutException.h" />
     <ClInclude Include="..\..\common\MenuItem.h" />
     <ClInclude Include="..\..\common\Message.h" />
     <ClInclude Include="..\..\common\Protocol.h" />
+    <ClInclude Include="..\..\common\sha1.h" />
     <ClInclude Include="..\..\common\User.h" />
     <ClInclude Include="..\..\common\UserManager.h" />
     <ClInclude Include="..\..\common\Validation.h" />

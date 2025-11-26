@@ -7,6 +7,7 @@
 #include <thread>
 #include <vector>
 #include <atomic>
+#include <memory>
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -27,9 +28,14 @@ using SOCKET_TYPE = int;
 
 #define BUFFER_SIZE_CLIENT 4096
 
+// Подключаем общие классы
+#include "../common/Logger.h"
+#include "../common/sha1.h"
+
 namespace chat
 {
-    class ChatClient {
+    class ChatClient
+    {
     public:
         ChatClient(const std::string& serverIp, int port);
         ~ChatClient();
@@ -69,7 +75,9 @@ namespace chat
         std::string m_messageHistory;
         bool m_hasNewMessages = false;
 
-        static ChatClient* instance;
+        std::unique_ptr<Logger> m_logger; 
+
+        static ChatClient* m_instance;
         static void signalHandler(int signal);
     };
 }

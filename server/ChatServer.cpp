@@ -11,6 +11,7 @@
 #include <cerrno>
 #include <cstring>
 #include <iomanip>
+#include <string>
 
 #ifdef _WIN32
 #pragma comment(lib, "ws2_32.lib")
@@ -148,7 +149,10 @@ namespace chat
     void ChatServer::handleClient(SOCKET_TYPE clientSocket)
     {
         char buffer[BUFFER_SIZE_SRV];
+        m_logger->debug("handleClient started for socket: " + std::to_string(clientSocket));
         std::string m_currentLogin;
+        bool should_disconnect = false; // Флаг для выхода из цикла
+
 
 #ifdef _WIN32
         u_long mode = 1;
@@ -158,7 +162,7 @@ namespace chat
         fcntl(clientSocket, F_SETFL, flags | O_NONBLOCK);
 #endif
 
-        while (m_running)
+        while (m_running && !should_disconnect)
         {
             ssize_t bytes = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
             if (bytes > 0)
@@ -255,8 +259,10 @@ namespace chat
                             m_logger->warning("Login failed for '" + msg.sender + "': Invalid password hash characters.");
                             break;
                         }
-
+                        m_logger->debug("About to call findUserByLogin for: " + msg.sender);
                         auto user = m_db.findUserByLogin(msg.sender);
+                        auto str = "findUserByLogin returned: " + std::string(user.has_value() ? "true" : "false");
+                        m_logger->debug(str);
                         if (user) 
                         {
                             if (user->GetPassword() == msg.payload) 
@@ -345,7 +351,24 @@ namespace chat
 
                     case MessageType::GET_HISTORY:
                     {
-                        sendMessageHistory(clientSocket, m_currentLogin);
+                        try 
+                        {
+                            sendMessageHistory(clientSocket, m_currentLogin);
+                        }
+                        catch (const std::exception& db_e) 
+                        {
+                            m_logger->error("Database operation error in GET_HISTORY: " + std::string(db_e.what()));
+                            should_disconnect = true;
+                            // Попробовать корректно закрыть соединение
+                            break; // Прервать цикл обработки этого клиента
+                        }
+                        catch (...) 
+                        {
+                            m_logger->error("Unknown database operation error in GET_HISTORY.");
+                            should_disconnect = true;
+                            // Попробовать корректно закрыть соединение
+                            break; // Прервать цикл обработки этого клиента
+                        }
                         break;
                     }
 
@@ -356,11 +379,14 @@ namespace chat
                 catch (const std::exception& e)
                 {
                     m_logger->error("Deserialization error: " + std::string(e.what()));
+                    m_logger->error("Context: socket=" + std::to_string(clientSocket) + ", buffer contents likely corrupted.");
+                    should_disconnect = true;
                     break;
                 }
             }
             else if (bytes == 0)
             {
+                should_disconnect = true;
                 break;
             }
             else
@@ -372,6 +398,7 @@ namespace chat
                 if (errno != EAGAIN && errno != EWOULDBLOCK)
                 {
 #endif
+                    should_disconnect = true;
                     break;
                 }
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
